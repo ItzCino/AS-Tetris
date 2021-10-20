@@ -4,11 +4,32 @@
 #import modules
 import pygame
 import random
+import time
 
 window_width = 1200
 window_height = 800
 window_size = (window_width, window_height)
+main_window = pygame.display.set_mode(window_size)
+clock = pygame.time.Clock()
+pygame.init()
 FPS = 60
+
+# Colors
+white = (255,255,255)
+
+green = (96, 169, 23)
+darkerGreen = (50, 75, 10)
+darkGreen = (45, 118, 0)
+
+orange = (250, 104, 0)
+darkerOrange = (199, 53, 0)
+darkOrange = (125, 50, 0)
+
+red = (229, 20, 0)
+darkerRed = (178, 0, 0)
+darkRed = (115, 10, 0)
+
+lightGrey = (200,200,200)
 
 # timer
 def myclock(clock):
@@ -22,43 +43,65 @@ def myclock(clock):
         return clock
 
 
-# Initalisation 
-def init():
-    main_menu = pygame.display.set_mode(window_size)
-    pygame.display.set_caption("Main Menu")
-    clock = pygame.time.Clock()
-    running = True
-    pygame.init()
-    main_menu_font = pygame.font.SysFont("Arial", 125)
-
-    return main_menu, running, clock, main_menu_font
-
-
-#draws texts for the future buttons onto screen
-# def draw_text(text, font, buttonColor, fontColor, surface, x, y):
-#     text_object = font.render(text, 10, fontColor)
-#     text_rect = text_object.get_rect()
-#     text_rect.topleft = (x, y)
-#     pygame.draw.rect(surface, buttonColor,text_rect)
-#     surface.blit(text_object, text_rect)
-
 class main_menu_buttons:
-    def __init__(self, text, x, y, width, height, fontColor):
+    def __init__(self, text, fontSize, fontColor, buttonColor, hoveringColor, 
+                        x, y, func, width=None, height=None):
         self.text = text
+        self.fontSize = fontSize
         self.x = x
         self.y = y
         self.pos= (x, y)
         self.width = width
         self.height = height
         self.fontColor = fontColor
+        self.text_rect = None
+        self.buttonColor = buttonColor
+        self.hoveringColor = hoveringColor
+        self.currentButtonColor = buttonColor
+        self.func = func
 
 
-    def drawButton(self, window, buttonColor, padding, autoCenter=False, 
-                                        outline=False, outlineColor=None):
-        main_menu_font = pygame.font.SysFont("Arial", 100)
+    def hoveringOverButton(self):
+        # Gets mouse position.
+        mouse_position = pygame.mouse.get_pos()
+        # checks for when mouse is inside the button in the x and y directions.
+        if mouse_position[0] > self.text_rect[0] and mouse_position[0] < self.text_rect[0] + self.text_rect[2]:
+            if mouse_position[1] > self.text_rect[1] and mouse_position[1] < self.y + self.text_rect[3]:
+                # If inside the button do this: Change color of button
+                self.currentButtonColor = self.hoveringColor
+                    #Clicking Code Here
+                keys = pygame.mouse.get_pressed()
+                if keys[0]:
+                    print("in")
+                    self.func()
+
+
+            else:
+                # Otherwise do this: Revert Color of button to original color
+                self.currentButtonColor = self.buttonColor
+
+        else:
+            # Otherwise do this: Revert Color of button to original color
+            self.currentButtonColor = self.buttonColor
+        # print(mouse_position)
+        # print(self.currentButtonColor)
+
+
+
+    def drawButton(self, window, padding, autoCenter=False, 
+                                outline=False, outlineColor=None):
+        main_menu_font = pygame.font.SysFont("Arial", self.fontSize)
         text_object = main_menu_font.render(self.text, 10, self.fontColor)
         text_rect = text_object.get_rect()
         text_rect.topleft = self.pos
+
+        # Draws background area for button
+
+        if self.width != None:
+            text_rect[2] = self.width
+
+        if self.height != None:
+            text_rect[3] = self.height
 
         if autoCenter:
             buttonWidth = text_rect[2]
@@ -71,25 +114,108 @@ class main_menu_buttons:
                                                     text_rect[2] + 2*padding, 
                                                     text_rect[3] + 2*padding))
 
-        pygame.draw.rect(window, buttonColor, text_rect)
+        self.text_rect = text_rect
+        self.hoveringOverButton()   
+        
+
+        pygame.draw.rect(window, self.currentButtonColor, text_rect)
+
+        # Centering of text for button
+        # Calculates the Topleft position for centering button
+        # print('before: ',text_rect)
+        
+        text_rect = text_object.get_rect()
+        text_rect.topleft = self.pos
+
+
+        # Gets width + Height of the text object
+        textDimensions = main_menu_font.size(self.text)
+
+        # print(main_menu_font.size(self.text))
+        # Centering of text for button
+        centerOfButtonX = text_rect[0] + (self.width//2) - (textDimensions[0] // 2)
+        centerOfButtonY = text_rect[1] + (self.height//2) - (textDimensions[1] // 2)
+        newPos = (centerOfButtonX, centerOfButtonY)
+        # print('after: ', newPos)
+        # print((text_rect[2]//2), (textDimensions[0] // 2))
+        # print(text_rect[2], text_rect[3])
+
+        text_rect.topleft = newPos
+        
+        # Centers TEXT to middle of the window; Horizontally
+        if autoCenter:
+            buttonWidth = text_rect[2]
+            center = (window_width / 2) - (buttonWidth / 2)
+            text_rect[0] = center
+
+
+
+        # pygame.draw.rect(main_window, lightGrey, (newPos[0], newPos[1], 5,5))
+        # pygame.draw.rect(main_window, lightGrey, text_rect, 5, 5)
+
+
         window.blit(text_object, text_rect)
 
 
-# event main loop
-def main_loop():
-    main_window, running_state, clock, main_menu_font = init()
-    clockTick = 1
-    while running_state:
-        main_window.fill((0,0,0))
+def say(text):
+    print(text)
+
+
+# Draws a 10 x 20 grid 
+def drawGrid(rows, columns, x, y, gridSize):
+
+    for row in range(columns):
+        print(row)
+    for column in range(rows):
+        print(column)
+    exit()
+
+def gameLoop():
+    exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
+    helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, mainMenu, 225, 125)
+
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
-        # draw_text('Play', main_menu_font, (96, 169, 23),(255, 255, 255), main_window, 500, 200)
-        button = main_menu_buttons("PLAY", 100, 100, 200, 200, (255,255,255))
-        button.drawButton(main_window, (96, 169, 23), 8, True, True, (45, 118, 0))
-        clockTick = myclock(clockTick)
+        main_window.fill(lightGrey)
+        # drawGrid(20, 10, 50, 50, 20)
+        helpButton.drawButton(main_window, 8, False, True, darkOrange)
+        exitButton.drawButton(main_window, 8, False, True, darkRed)
         clock.tick(FPS)
         pygame.display.update()
+    print(namer)
+
+def mainMenu():
+    pygame.display.set_caption("Main Menu")
+    playButton = main_menu_buttons("Play", 100, white, green, darkerGreen, 390, 200, gameLoop, 300, 125)
+    helpButton = main_menu_buttons("Help", 100,  white, orange, darkerOrange, 390, 375, say, 300, 125)
+    exitButton = main_menu_buttons("Exit", 100,  white, red, darkerRed, 390, 550, exit, 300, 125)
+    while True:
+        main_window.fill(lightGrey)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+        playButton.drawButton(main_window, 8, True, True, darkGreen)
+        helpButton.drawButton(main_window, 8, True, True, darkOrange)
+        exitButton.drawButton(main_window, 8, True, True, darkRed)
+        clock.tick(FPS)
+        pygame.display.update()
+        
+
+# event main loop
+def main_loop():
+    running_state = True
+    clockTick = 1
+    while running_state:
+        # main_window.fill(lightGrey)
+        # for event in pygame.event.get():
+        #     if event.type == pygame.QUIT:
+        #         exit()
+        mainMenu()
+        # clockTick = myclock(clockTick)
+        # clock.tick(FPS)
+        # pygame.display.update()
 
         # myButton = button((255, 255, 255), 500, 500, 300, 100, "HELLO")
         
