@@ -5,16 +5,26 @@
 import pygame
 import random
 import time
+import pprint
 
 window_width = 1200
 window_height = 800
 window_size = (window_width, window_height)
-main_window = pygame.display.set_mode(window_size)
-clock = pygame.time.Clock()
+
+gameGridPosX = 425
+gameGridPosY = 50
+blockSize = 35
+columns = 10
+rows = 20
+
+# main_window = pygame.display.set_mode(window_size)
+# clock = pygame.time.Clock()
 pygame.init()
 FPS = 60
 
 # Colors
+
+black = (0, 0, 0)
 white = (255,255,255)
 
 green = (96, 169, 23)
@@ -30,6 +40,92 @@ darkerRed = (178, 0, 0)
 darkRed = (115, 10, 0)
 
 lightGrey = (200,200,200)
+grey = (100, 100, 100)
+darkGrey = (75, 75, 75)
+
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
+init_blocks = [
+    # T shape 1
+    [
+      ['..o.',
+       '.ooo'],
+      [
+       '.o.',
+       '.oo',
+       '.o.'],
+      [
+       '.ooo',
+       '..o.'],
+      [
+       '..o',
+       '.oo',
+       '..o'],
+     ],
+    # L Shape 2:
+    [['.o.',
+      '.o.',
+      '.oo'],
+     [
+      '.ooo',
+      '.o..'],
+     [
+      '.oo',
+      '..o',
+      '..o'],
+     [
+      '...o',
+      '.ooo']],
+    # L Shape flipped 3:
+    [['..o',
+      '..o',
+      '.oo'],
+     [
+      '.o...',
+      '.oooo',
+      ],
+     [
+      '.oo',
+      '.o.',
+      '.o.',
+      '.o.'],
+     [
+      '.ooo',
+      '...o',
+      ]],
+    # I Shape 4:
+    [[
+      '.o',
+      '.o',
+      '.o',
+      '.o'],
+     [
+      '.oooo']],
+    # Z Shape 5:
+    [[
+      '.oo.',
+      '..oo'],
+     [
+      '..o',
+      '.oo',
+      '.o.']],
+
+    # Z Flipped 6:
+    [[
+      '..oo',
+      '.oo.'],
+     [
+      '.o.',
+      '.oo',
+      '..o']],
+    # Box Shape 7:
+    [[
+      '.oo',
+      '.oo']]
+]
+
 
 # timer
 def myclock(clock):
@@ -41,6 +137,31 @@ def myclock(clock):
         clock += 1
         # print(clock)
         return clock
+
+# Text Class
+class createText:
+    def __init__(self, text, fontSize, fontColor, x, y):
+        self.text = text
+        self.fontSize = fontSize
+        self.fontColor = fontColor
+        self.x = x
+        self.y = y
+
+    # Draws text to screen
+    def drawText(self, window, autoCenter=False):
+        main_menu_font = pygame.font.SysFont("Arial", self.fontSize)
+        text_object = main_menu_font.render(self.text, 5, self.fontColor)
+        text_rect = text_object.get_rect()
+        text_rect.topleft = (self.x, self.y)
+    
+        textDimensions = main_menu_font.size(self.text)
+        # centers the text on the x axis of the window if True
+        if autoCenter:
+            text_rect[0] = (window_width / 2) - (textDimensions[0] / 2)
+        # print(textDimensions)
+        window.blit(text_object, text_rect)
+
+
 
 
 class main_menu_buttons:
@@ -91,7 +212,7 @@ class main_menu_buttons:
     def drawButton(self, window, padding, autoCenter=False, 
                                 outline=False, outlineColor=None):
         main_menu_font = pygame.font.SysFont("Arial", self.fontSize)
-        text_object = main_menu_font.render(self.text, 10, self.fontColor)
+        text_object = main_menu_font.render(self.text, 5, self.fontColor)
         text_rect = text_object.get_rect()
         text_rect.topleft = self.pos
 
@@ -156,46 +277,186 @@ class main_menu_buttons:
 
         window.blit(text_object, text_rect)
 
+class tetrisPiece:
+    def __init__(self):
+        self.x = gameGridPosX + 5 * blockSize
+        self.y = gameGridPosY
+        self.bottomCord = gameGridPosY + (rows * blockSize)
+        self.rightCord = gameGridPosX + (columns * blockSize)
+
+
+    def drawPiece(self, surface):
+        pygame.draw.rect(surface, red, 
+                        (self.x, self.y, 
+                        blockSize, blockSize))
+
+    def moveUp(self):
+        if (self.y - blockSize) >= gameGridPosY:
+            self.y -= blockSize
+
+    def moveDown(self):
+        if (self.y + blockSize) < self.bottomCord:
+            self.y += blockSize
+
+    def moveLeft(self):
+        if (self.x - blockSize) >= gameGridPosX:
+            self.x -= blockSize
+
+    def moveRight(self):
+        if (self.x + blockSize) < self.rightCord:
+            self.x += blockSize
+
+    def checkCords(self):
+        print(self.x, self.y)
 
 def say(text):
     print(text)
 
 
+def createGrid(rows, columns):
+    # change this to grey later
+    black = (0, 0, 0)
+    finishedGrid = []
+    finishedGrid = [[(black) for row in range(rows)] for column in range(columns)]
+
+    return finishedGrid
+
+
 # Draws a 10 x 20 grid 
-def drawGrid(rows, columns, x, y, gridSize):
+def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
 
-    for row in range(columns):
-        print(row)
-    for column in range(rows):
-        print(column)
-    exit()
+    width = columns * blockSize
+    height = rows * blockSize
+    startX = x
+    startY = y
 
-def gameLoop():
-    exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
-    helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, mainMenu, 225, 125)
+    # Fills in the grid with a darker shade of grey
+    pygame.draw.rect(surface, (150, 150, 150), (x,y,width,height))
+    
+    
+
+
+    # displays colors / pieces on the grid
+    for column in range(0, len(gridData)):
+        for row in range(0, len(gridData[0])):
+            pygame.draw.rect(surface, (gridData[column])[row], 
+                            (startX + (blockSize*column), 
+                            startY + (blockSize*row), 
+                            blockSize, blockSize))
+
+    piece.drawPiece(surface)
+    
+
+    # Draws Vertical lines
+    for column in range(columns):
+        pygame.draw.line(surface, grey, (x, y) ,(x, y + height), 2)
+        x += blockSize
+
+    # Draws Horizontal Lines
+    x = startX
+    for row in range(rows):
+        pygame.draw.line(surface, grey, (x, y) ,(x + width, y), 2)
+        y += blockSize
+    y = startY
+    
+    # Creates Border
+    pygame.draw.rect(surface, darkGrey, (x,y,width,height), 5)
+    # print(x,y)
+    
+
+    # exit()
+
+def gameLoop(main_window, clock):
+    # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
+    piece = None
+    helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
+    gridData = createGrid(rows, columns)
+    i=0
+    while True:
+        if piece is None:
+            piece = tetrisPiece()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+
+        clock.tick(20)
+        
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP]:
+            piece.moveUp()
+            # print("UP")
+        if keys[pygame.K_DOWN]:
+            piece.moveDown()
+            # print("DOWN")
+        if keys[pygame.K_LEFT]:
+            piece.moveLeft()
+            # print("LEFT")
+        if keys[pygame.K_RIGHT]:
+            piece.moveRight()
+            # print("RIGHT")
+        # if keys[pygame.K_SPACE]:
+        #     piece.placePiece()
+
+        # if i < 30:
+        #     i += 1
+        # else:
+        #     piece.moveDown()
+
+        #     i = 0
+        
+
+        main_window.fill(lightGrey)
+        helpButton.drawButton(main_window, 8, False, True, darkOrange)
+        piece.checkCords()
+        drawGrid(main_window, gameGridPosX, gameGridPosY, rows, columns, blockSize, gridData, piece)
+        # piece.drawPiece(main_window)
+
+        # exitButton.drawButton(main_window, 8, False, True, darkRed)
+        
+        clock.tick(FPS)
+        pygame.display.update()
+    print(namer)
+
+
+def helpWindow(main_window, clock):
+    helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
+
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
         main_window.fill(lightGrey)
-        # drawGrid(20, 10, 50, 50, 20)
         helpButton.drawButton(main_window, 8, False, True, darkOrange)
-        exitButton.drawButton(main_window, 8, False, True, darkRed)
+
         clock.tick(FPS)
         pygame.display.update()
-    print(namer)
 
-def mainMenu():
-    pygame.display.set_caption("Main Menu")
-    playButton = main_menu_buttons("Play", 100, white, green, darkerGreen, 390, 200, gameLoop, 300, 125)
-    helpButton = main_menu_buttons("Help", 100,  white, orange, darkerOrange, 390, 375, say, 300, 125)
+
+def exitGame(main_window, clock):
     exitButton = main_menu_buttons("Exit", 100,  white, red, darkerRed, 390, 550, exit, 300, 125)
     while True:
         main_window.fill(lightGrey)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
+        exitButton.drawButton(main_window, 8, True, True, darkRed)
+        clock.tick(FPS)
+        pygame.display.update() 
+    
+
+def mainMenu(main_window, clock):
+    pygame.display.set_caption("Main Menu")
+    tetris = createText('TETRIS', 100, darkGrey, 390, 35)
+    playButton = main_menu_buttons("Play", 70, white, green, darkerGreen, 390, 200, lambda: gameLoop(main_window, clock), 325, 125)
+    helpButton = main_menu_buttons("Help", 70,  white, orange, darkerOrange, 390, 375, lambda: helpWindow(main_window, clock), 325, 125)
+    exitButton = main_menu_buttons("Exit", 70,  white, red, darkerRed, 390, 550, lambda: exitGame(main_window, clock), 325, 125)
+    while True:
+        main_window.fill(lightGrey)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+        tetris.drawText(main_window, True)
         playButton.drawButton(main_window, 8, True, True, darkGreen)
         helpButton.drawButton(main_window, 8, True, True, darkOrange)
         exitButton.drawButton(main_window, 8, True, True, darkRed)
@@ -212,7 +473,9 @@ def main_loop():
         # for event in pygame.event.get():
         #     if event.type == pygame.QUIT:
         #         exit()
-        mainMenu()
+        main_window = pygame.display.set_mode(window_size)
+        clock = pygame.time.Clock()
+        mainMenu(main_window, clock)
         # clockTick = myclock(clockTick)
         # clock.tick(FPS)
         # pygame.display.update()
