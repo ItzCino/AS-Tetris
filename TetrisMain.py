@@ -22,6 +22,17 @@ rows = 20
 pygame.init()
 FPS = 60
 
+# Colors for pieces
+red = (192, 0, 0)
+orange = (255, 165, 0)
+yellow = (192, 192, 0)
+green = (0, 192, 0)
+blue = (0, 0, 192)
+cyan = (0, 192, 192)
+purple = (138,43,226)
+
+block_colors = [purple, orange, blue, cyan, red, green, yellow]
+
 # Colors
 
 black = (0, 0, 0)
@@ -43,11 +54,16 @@ lightGrey = (200,200,200)
 grey = (100, 100, 100)
 darkGrey = (75, 75, 75)
 
+
+
+
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-init_blocks = [
+thing = []
+
+tetris_data = [
     # T shape 1
     [
       ['..o.',
@@ -283,12 +299,22 @@ class tetrisPiece:
         self.y = gameGridPosY
         self.bottomCord = gameGridPosY + (rows * blockSize)
         self.rightCord = gameGridPosX + (columns * blockSize)
+        self.rotation = 0
+        self.shape = random.randint(0, len(blockData) - 1)
 
 
     def drawPiece(self, surface):
-        pygame.draw.rect(surface, red, 
-                        (self.x, self.y, 
-                        blockSize, blockSize))
+        print(self.shape)
+        # takes the rotation index of the piece that was selected.
+        for coordinates in blockData[self.shape][self.rotation % len(blockData[self.shape])]:
+            x = coordinates[0] - 1
+            y = coordinates[1]
+            
+            pygame.draw.rect(surface, block_colors[self.shape], (x * blockSize + self.x, y * blockSize + self.y, blockSize, blockSize))
+
+
+    def rotate(self):
+        self.rotation += 1
 
     def moveUp(self):
         if (self.y - blockSize) >= gameGridPosY:
@@ -307,11 +333,29 @@ class tetrisPiece:
             self.x += blockSize
 
     def checkCords(self):
-        print(self.x, self.y)
+        # print(self.x, self.y)
+        print(self.rotation)
 
-def say(text):
-    print(text)
 
+def convertTetrisData(blockData):
+    positions = []
+    for shape in blockData:
+        temp_shape = []
+        for orientation in shape:
+            temp_orientation = []
+            line_count = 0
+            for line in orientation:
+                position_count = 0
+                for block in line:
+                    if block == 'o':
+                        temp_orientation.append((position_count, line_count))
+                    position_count += 1
+                line_count += 1
+            temp_shape.append(temp_orientation)
+        positions.append(temp_shape)
+    print(positions)
+    return positions
+    
 
 def createGrid(rows, columns):
     # change this to grey later
@@ -331,11 +375,8 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
     startY = y
 
     # Fills in the grid with a darker shade of grey
-    pygame.draw.rect(surface, (150, 150, 150), (x,y,width,height))
+    # pygame.draw.rect(surface, (150, 150, 150), (x,y,width,height))
     
-    
-
-
     # displays colors / pieces on the grid
     for column in range(0, len(gridData)):
         for row in range(0, len(gridData[0])):
@@ -343,10 +384,8 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
                             (startX + (blockSize*column), 
                             startY + (blockSize*row), 
                             blockSize, blockSize))
-
     piece.drawPiece(surface)
     
-
     # Draws Vertical lines
     for column in range(columns):
         pygame.draw.line(surface, grey, (x, y) ,(x, y + height), 2)
@@ -381,6 +420,12 @@ def gameLoop(main_window, clock):
 
         clock.tick(20)
         
+        main_window.fill(lightGrey)
+        helpButton.drawButton(main_window, 8, False, True, darkOrange)
+        piece.checkCords()
+        drawGrid(main_window, gameGridPosX, gameGridPosY, rows, columns, blockSize, gridData, piece)
+
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP]:
             piece.moveUp()
@@ -394,6 +439,10 @@ def gameLoop(main_window, clock):
         if keys[pygame.K_RIGHT]:
             piece.moveRight()
             # print("RIGHT")
+        if keys[pygame.K_r]:
+            piece.rotate()
+        if keys[pygame.K_ESCAPE]:
+            piece = None
         # if keys[pygame.K_SPACE]:
         #     piece.placePiece()
 
@@ -405,10 +454,7 @@ def gameLoop(main_window, clock):
         #     i = 0
         
 
-        main_window.fill(lightGrey)
-        helpButton.drawButton(main_window, 8, False, True, darkOrange)
-        piece.checkCords()
-        drawGrid(main_window, gameGridPosX, gameGridPosY, rows, columns, blockSize, gridData, piece)
+        
         # piece.drawPiece(main_window)
 
         # exitButton.drawButton(main_window, 8, False, True, darkRed)
@@ -485,6 +531,7 @@ def main_loop():
 
 
 if __name__ == '__main__':
+    blockData = convertTetrisData(tetris_data)
     main_loop()
 
 
