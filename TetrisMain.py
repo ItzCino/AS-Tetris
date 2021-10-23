@@ -31,7 +31,7 @@ blue = (0, 0, 192)
 cyan = (0, 192, 192)
 purple = (138,43,226)
 
-block_colors = [purple, orange, blue, cyan, red, green, yellow, red]
+block_colors = [purple, orange, blue, cyan, red, green, yellow, (255, 255, 255)]
 
 # Colors
 
@@ -55,13 +55,14 @@ grey = (100, 100, 100)
 darkGrey = (75, 75, 75)
 
 
-
+squareColor = black
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 blockData = []
+gridData = []
 
 tetris_data = [
     # T shape 1
@@ -141,9 +142,12 @@ tetris_data = [
       'oo',
       'oo']],
     [[
-        '.o.',
-        '.o.',
-        'ooo'
+        '..o..',
+        '..o..',
+        '..o..',
+        '..o..',
+        'oo.oo',
+        'o...o'
 
     ]]
 ]
@@ -301,7 +305,7 @@ class main_menu_buttons:
 
 class tetrisPiece:
     def __init__(self):
-        self.x = gameGridPosX + 5 * blockSize
+        self.x = (gameGridPosX - blockSize + columns // 2 * blockSize)
         self.y = gameGridPosY
         self.bottomCord = gameGridPosY + (rows * blockSize)
         self.rightCord = gameGridPosX + (columns * blockSize)
@@ -337,27 +341,64 @@ class tetrisPiece:
                                     blockSize, blockSize))
 
 
+    def rotationbBoundaryCheck(self):
+        
+        pass
+
+
+    def boundaryCheck(self, direction):      
+        pieceInDirection = False
+        gridX = round((self.x - gameGridPosX) / blockSize)    
+        gridY = round((self.y - gameGridPosY) / blockSize)
+
+        for coordinates in blockData[self.shape][self.rotation]:
+            x = coordinates[0] + gridX
+            y = coordinates[1] + gridY
+
+            if direction == 'up':
+                if gridData[x][y - 1] != squareColor:
+                    pieceInDirection = True
+            if direction == 'down':
+                if gridData[x][y + 1] != squareColor:
+                    pieceInDirection = True
+            if direction == 'left':
+                if gridData[x - 1][y] != squareColor:
+                    pieceInDirection = True
+            if direction == 'right':
+                if gridData[x + 1][y] != squareColor:
+                    pieceInDirection = True
+
+        print(pieceInDirection)
+        return pieceInDirection
+        
+
+
     def rotate(self):
         self.rawRotationValue += 1
         self.rotation = self.rawRotationValue % len(blockData[self.shape])
 
     def moveUp(self):
         if (self.y - blockSize) >= gameGridPosY:
-            self.y -= blockSize
+            if self.boundaryCheck('up') == False:
+                self.y -= blockSize
 
     def moveDown(self):
         if (self.y + (len(tetris_data[self.shape][self.rotation]) * blockSize)) < self.bottomCord:
-            self.y += blockSize
-            # print('height: ', (len(tetris_data[self.shape][self.rotation])))
-            # print('heightContent: ', (tetris_data[self.shape][self.rotation]))
+            if self.boundaryCheck('down') == False:
+                self.y += blockSize
+                print('d')
+                # print('height: ', (len(tetris_data[self.shape][self.rotation])))
+                # print('heightContent: ', (tetris_data[self.shape][self.rotation]))
 
     def moveLeft(self):
         if (self.x - blockSize) >= gameGridPosX:
-            self.x -= blockSize
+            if self.boundaryCheck('left') == False:
+                self.x -= blockSize
 
     def moveRight(self):
         if (self.x + (len(tetris_data[self.shape][self.rotation][0]) * blockSize)) < self.rightCord:
-            self.x += blockSize
+            if self.boundaryCheck('right') == False:
+                self.x += blockSize
             # print('length: ', (len(tetris_data[self.shape][self.rotation][0])))
             # print('lengthContent: ', (tetris_data[self.shape][self.rotation][0]))
 
@@ -391,9 +432,8 @@ def convertTetrisData(blockData):
 
 def createGrid(rows, columns):
     # change this to grey later
-    black = (0, 0, 0)
     finishedGrid = []
-    finishedGrid = [[(grey) for row in range(rows)] for column in range(columns)]
+    finishedGrid = [[squareColor for row in range(rows)] for column in range(columns)]
 
     return finishedGrid
 
@@ -416,7 +456,7 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
                             (startX + (blockSize*column), 
                             startY + (blockSize*row), 
                             blockSize, blockSize))
-    # piece.drawPiece(surface)
+    piece.drawPiece(surface)
     
     # Draws Vertical lines
     for column in range(columns):
@@ -441,7 +481,7 @@ def gameLoop(main_window, clock):
     # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
     piece = None
     helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
-    gridData = createGrid(rows, columns)
+    # gridData = createGrid(rows, columns)
     i=0
     while True:
         
@@ -461,14 +501,18 @@ def gameLoop(main_window, clock):
                     piece = None
         if piece is None:
             piece = tetrisPiece()
-
+        # print(piece.x, piece.y)
         clock.tick(20)
         
         main_window.fill(lightGrey)
         helpButton.drawButton(main_window, 8, False, True, darkOrange)
         piece.checkCords()
         drawGrid(main_window, gameGridPosX, gameGridPosY, rows, columns, blockSize, gridData, piece)
-        piece.drawPiece(main_window)
+        # piece.drawPiece(main_window)
+        gridX = round((piece.x - gameGridPosX) / blockSize)    
+        gridY = round((piece.y - gameGridPosY) / blockSize)
+        
+        print('grid: ',gridX, gridY)
 
 
         keys = pygame.key.get_pressed()
@@ -577,6 +621,8 @@ def main_loop():
 
 if __name__ == '__main__':
     blockData = convertTetrisData(tetris_data)
+    gridData = createGrid(rows, columns)
+
     main_loop()
 
 
