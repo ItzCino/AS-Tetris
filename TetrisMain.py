@@ -7,10 +7,14 @@ import random
 import time
 import pprint
 
+acceleration = 0.2
+# dropCounter = 0
+
 window_width = 1200
 window_height = 800
 window_size = (window_width, window_height)
 
+linesCleared = 0
 gameGridPosX = 425 
 gameGridPosY = 50
 blockSize = 35
@@ -19,8 +23,9 @@ rows = 20
 
 # main_window = pygame.display.set_mode(window_size)
 # clock = pygame.time.Clock()
+
 pygame.init()
-FPS = 60
+FPS = 20
 
 # Colors for pieces
 red = (192, 0, 0)
@@ -313,6 +318,8 @@ class tetrisPiece:
         self.rotation = 0
         self.shape = random.randint(0, len(blockData) - 1)
         self.color = block_colors[self.shape]
+        self.dropCounter = 0
+
         # print(self.x, self.y)
 
 
@@ -454,11 +461,8 @@ class tetrisPiece:
     def moveDown(self):
         if (self.y + (len(tetris_data[self.shape][self.rotation]) * blockSize)) < self.bottomCord:
             if self.pieceInDirection('down') == False:
+                self.dropCounter = 0
                 self.y += blockSize
-                print('d')
-                # print('height: ', (len(tetris_data[self.shape][self.rotation])))
-                # print('heightContent: ', (tetris_data[self.shape][self.rotation]))
-
 
     def moveLeft(self):
         if (self.x - blockSize) >= gameGridPosX:
@@ -470,8 +474,6 @@ class tetrisPiece:
         if (self.x + (len(tetris_data[self.shape][self.rotation][0]) * blockSize)) < self.rightCord:
             if self.pieceInDirection('right') == False:
                 self.x += blockSize
-            # print('length: ', (len(tetris_data[self.shape][self.rotation][0])))
-            # print('lengthContent: ', (tetris_data[self.shape][self.rotation][0]))
 
 
     def checkCords(self):
@@ -550,11 +552,10 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
 def gameLoop(main_window, clock):
     # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
     piece = None
+    linesCleared = 0
     helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
     # gridData = createGrid(rows, columns)
-    i=0
     while True:
-        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
@@ -572,7 +573,9 @@ def gameLoop(main_window, clock):
         if piece is None:
             piece = tetrisPiece()
         # print(piece.x, piece.y)
-        clock.tick(20)
+        # clock.tick(20)
+        # time.sleep(0.2)
+        # piece.moveDown()
         
         main_window.fill(lightGrey)
         helpButton.drawButton(main_window, 8, False, True, darkOrange)
@@ -597,23 +600,19 @@ def gameLoop(main_window, clock):
             # print("LEFT")
         if keys[pygame.K_RIGHT]:
             piece.moveRight()
-            # print("RIGHT")
-        # if keys[pygame.K_r]:
-        #     piece.rotate()
-        # if keys[pygame.K_ESCAPE]:
-        #     piece = None
-        # if keys[pygame.K_SPACE]:
-        #     piece.placePiece()
+ 
+        if piece.dropCounter < FPS :
+            piece.dropCounter += (1 + linesCleared *acceleration)
+        else:
+            piece.moveDown()
 
-        # if i < 30:
-        #     i += 1
-        # else:
-        #     piece.moveDown()
+            piece.dropCounter = 0
+        # linesCleared += 1
 
-        #     i = 0
-        
+        print('rate: ', (1 + linesCleared *0.5))
+        # print('lines cleared: ', linesCleared)
 
-        
+        # print(linesCleared)
         # piece.drawPiece(main_window)
 
         # exitButton.drawButton(main_window, 8, False, True, darkRed)
@@ -622,11 +621,8 @@ def gameLoop(main_window, clock):
         pygame.display.update()
 
 
-
 def helpWindow(main_window, clock):
     helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
-
-
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -687,7 +683,6 @@ def main_loop():
 
         # myButton = button((255, 255, 255), 500, 500, 300, 100, "HELLO")
         
-
 
 if __name__ == '__main__':
     blockData = convertTetrisData(tetris_data)
