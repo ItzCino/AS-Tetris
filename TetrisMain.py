@@ -341,9 +341,24 @@ class tetrisPiece:
                                     blockSize, blockSize))
 
 
-    def rotationbBoundaryCheck(self):
-        
-        pass
+    def rotationBoundaryCheck(self):
+        pieceInRotation = False
+        gridX = round((self.x - gameGridPosX) / blockSize)    
+        gridY = round((self.y - gameGridPosY) / blockSize)
+        for coordinates in blockData[self.shape] \
+        [(self.rawRotationValue + 1) % len(blockData[self.shape])]:
+            x = coordinates[0] + gridX
+            y = coordinates[1] + gridY
+            print(x, y)
+            if 0 > x or x > (columns - 1) or     \
+                  y < 0 or y > (rows - 1):
+                print('pieceInRotation = true')
+                pieceInRotation = True
+                return pieceInRotation
+            if gridData[x][y] != squareColor:
+                pieceInRotation = True
+
+        return pieceInRotation
 
 
     def boundaryCheck(self, direction):      
@@ -374,8 +389,9 @@ class tetrisPiece:
 
 
     def rotate(self):
-        self.rawRotationValue += 1
-        self.rotation = self.rawRotationValue % len(blockData[self.shape])
+        if self.rotationBoundaryCheck() == False:
+            self.rawRotationValue += 1
+            self.rotation = self.rawRotationValue % len(blockData[self.shape])
 
     def moveUp(self):
         if (self.y - blockSize) >= gameGridPosY:
