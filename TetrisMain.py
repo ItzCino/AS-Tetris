@@ -11,7 +11,7 @@ window_width = 1200
 window_height = 800
 window_size = (window_width, window_height)
 
-gameGridPosX = 425
+gameGridPosX = 425 
 gameGridPosY = 50
 blockSize = 35
 columns = 10
@@ -330,7 +330,9 @@ class tetrisPiece:
         # print(self.shape)
         # takes the rotation index of the piece that was selected.
         # print(self.shape)   
-
+        self.rotation = self.rawRotationValue % len(blockData[self.shape])
+        print(self.rawRotationValue, self.rotation)
+        
         for coordinates in blockData[self.shape][self.rotation]:
             x = coordinates[0] 
             y = coordinates[1]
@@ -341,6 +343,8 @@ class tetrisPiece:
                                     blockSize, blockSize))
 
 
+# checks that the piece isn't out of grid before rotating
+# checks that the piece collide with other pieces before rotating
     def rotationBoundaryCheck(self):
         pieceInRotation = False
         gridX = round((self.x - gameGridPosX) / blockSize)    
@@ -361,63 +365,113 @@ class tetrisPiece:
         return pieceInRotation
 
 
-    def boundaryCheck(self, direction):      
+    # renamed from boundaryCheck to pieceInDirection
+    def pieceInDirection(self, direction, rotation=0):      
         pieceInDirection = False
         gridX = round((self.x - gameGridPosX) / blockSize)    
         gridY = round((self.y - gameGridPosY) / blockSize)
-
-        for coordinates in blockData[self.shape][self.rotation]:
-            x = coordinates[0] + gridX
-            y = coordinates[1] + gridY
-
-            if direction == 'up':
-                if gridData[x][y - 1] != squareColor:
-                    pieceInDirection = True
-            if direction == 'down':
-                if gridData[x][y + 1] != squareColor:
-                    pieceInDirection = True
-            if direction == 'left':
-                if gridData[x - 1][y] != squareColor:
-                    pieceInDirection = True
-            if direction == 'right':
-                if gridData[x + 1][y] != squareColor:
-                    pieceInDirection = True
-
+        try:
+            for coordinates in blockData[self.shape]                 \
+                [(self.rawRotationValue + rotation) %                \
+                len(blockData[self.shape])]:    
+                x = coordinates[0] + gridX
+                y = coordinates[1] + gridY
+                
+                if direction == 'up':
+                    if gridData[x][y - 1] != squareColor:
+                        pieceInDirection = True
+                    if 0 > x or x > (columns - 1) or                 \
+                  (y - 1) < 0 or (y - 1) > (rows - 1):
+                        pieceInRotation = True
+                        return pieceInRotation
+                if direction == 'down':
+                    if gridData[x][y + 1] != squareColor:
+                        pieceInDirection = True
+                    if 0 > x or x > (columns - 1) or                  \
+                  (y + 1) < 0 or (y + 1) > (rows - 1):
+                        pieceInRotation = True
+                        return pieceInRotation
+                if direction == 'left':
+                    if gridData[x - 1][y] != squareColor:
+                        pieceInDirection = True
+                    if 0 > (x - 1) or (x - 1) > (columns - 1) or       \
+                  y < 0 or y > (rows - 1):
+                        pieceInRotation = True
+                        return pieceInRotation
+                if direction == 'right':
+                    if gridData[x + 1][y] != squareColor:
+                        pieceInDirection = True
+                    if 0 > (x + 1) or (x + 1) > (columns - 1) or        \
+                  y < 0 or y > (rows - 1):
+                        pieceInRotation = True
+                        return pieceInRotation
+        except IndexError:
+            pieceInDirection = True
         print(pieceInDirection)
         return pieceInDirection
+
+
+    def assistRotate(self):
+        rotated = False
+        print('before:', self.rawRotationValue)
+        if rotated == False and self.pieceInDirection('down', 1) == False:
+            self.rawRotationValue += 1
+            self.y += blockSize
+            rotated = True
+
+        if rotated == False and self.pieceInDirection('left', 1) == False:
+            self.rawRotationValue += 1
+            self.x -= blockSize
+            rotated = True
+
+        if rotated == False and self.pieceInDirection('right', 1) == False:
+            self.rawRotationValue += 1
+            self.x += blockSize
+            rotated = True
         
+        if rotated == False and self.pieceInDirection('up', 1) == False:
+            self.rawRotationValue += 1
+            self.y -= blockSize
+            rotated = True
+
+        print('after:', self.rawRotationValue)  
 
 
     def rotate(self):
         if self.rotationBoundaryCheck() == False:
             self.rawRotationValue += 1
             self.rotation = self.rawRotationValue % len(blockData[self.shape])
+        else:
+            self.assistRotate()
+
 
     def moveUp(self):
         if (self.y - blockSize) >= gameGridPosY:
-            if self.boundaryCheck('up') == False:
+            if self.pieceInDirection('up') == False:
                 self.y -= blockSize
+
 
     def moveDown(self):
         if (self.y + (len(tetris_data[self.shape][self.rotation]) * blockSize)) < self.bottomCord:
-            if self.boundaryCheck('down') == False:
+            if self.pieceInDirection('down') == False:
                 self.y += blockSize
                 print('d')
                 # print('height: ', (len(tetris_data[self.shape][self.rotation])))
                 # print('heightContent: ', (tetris_data[self.shape][self.rotation]))
 
+
     def moveLeft(self):
         if (self.x - blockSize) >= gameGridPosX:
-            if self.boundaryCheck('left') == False:
+            if self.pieceInDirection('left') == False:
                 self.x -= blockSize
+
 
     def moveRight(self):
         if (self.x + (len(tetris_data[self.shape][self.rotation][0]) * blockSize)) < self.rightCord:
-            if self.boundaryCheck('right') == False:
+            if self.pieceInDirection('right') == False:
                 self.x += blockSize
             # print('length: ', (len(tetris_data[self.shape][self.rotation][0])))
             # print('lengthContent: ', (tetris_data[self.shape][self.rotation][0]))
-
 
 
     def checkCords(self):
@@ -528,7 +582,7 @@ def gameLoop(main_window, clock):
         gridX = round((piece.x - gameGridPosX) / blockSize)    
         gridY = round((piece.y - gameGridPosY) / blockSize)
         
-        print('grid: ',gridX, gridY)
+        # print('grid: ',gridX, gridY)
 
 
         keys = pygame.key.get_pressed()
