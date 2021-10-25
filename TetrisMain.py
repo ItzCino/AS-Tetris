@@ -323,14 +323,15 @@ class tetrisPiece:
         # print(self.x, self.y)
 
 
-    def placePiece(self, gridData):
+    def placePiece(self, gridData, dropRate='instant'):
         gridX = (self.x - gameGridPosX) // blockSize 
         gridY = (self.y - gameGridPosY) // blockSize
-        while True:
-            if self.pieceInDirection('down', 0, None, gridY) is True:
-                break
-            else:
-                gridY += 1
+        if dropRate == 'instant':
+            while True:
+                if self.pieceInDirection('down', 0, None, gridY) is True:
+                    break
+                else:
+                    gridY += 1
         print('out\nout')
         for coordinates in blockData[self.shape][self.rotation]:
             x = coordinates[0] 
@@ -504,7 +505,6 @@ class tetrisPiece:
         if pieceInDirection == True:
             # self.placePiece(gridData)
             print('placed')
-        
         return pieceInDirection
 # bottomGrid
     def moveLeft(self):
@@ -596,6 +596,8 @@ def gameLoop(main_window, clock):
     # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
     piece = None
     linesCleared = 0
+    placeCountdown = 0
+    pieceInDownDirection = False
     helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
     # gridData = createGrid(rows, columns)
     while True:
@@ -635,7 +637,7 @@ def gameLoop(main_window, clock):
         # piece.drawPiece(main_window)
         gridX = round((piece.x - gameGridPosX) / blockSize)    
         gridY = round((piece.y - gameGridPosY) / blockSize)
-        
+        pieceInDownDirection = False
         # print('grid: ',gridX, gridY)
 
 
@@ -644,9 +646,10 @@ def gameLoop(main_window, clock):
             piece.moveUp()
             # print("UP")
         if keys[pygame.K_DOWN]:
-            # piece.moveDown()
-            if piece.moveDown() == True:
+            pieceInDownDirection = piece.moveDown()
+            if pieceInDownDirection == True:
                 piece.dropCounter = 0
+                placeCountdown = 0
                 # piece = tetrisPiece()
             # print("DOWN")
         if keys[pygame.K_LEFT]:
@@ -654,15 +657,21 @@ def gameLoop(main_window, clock):
             # print("LEFT")
         if keys[pygame.K_RIGHT]:
             piece.moveRight()
- 
+
         if piece.dropCounter < FPS :
             piece.dropCounter += (1 + linesCleared *acceleration)
         else:
-            if piece.moveDown() == True:
-                piece.placePiece(gridData)
-                piece = tetrisPiece()
+            pieceInDownDirection = piece.moveDown()
             piece.dropCounter = 0
 
+        if placeCountdown < FPS*1.5:
+            placeCountdown += 1
+        else:
+            if pieceInDownDirection == True:
+                piece.placePiece(gridData)
+                piece = tetrisPiece()
+            placeCountDown = 0
+            
 
         # linesCleared += 1
 
