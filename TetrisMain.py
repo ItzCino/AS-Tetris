@@ -630,18 +630,42 @@ def checkGrid(gridData):
     for column in range(columns):
         for row in range(rows):
             gridData[column][row] = altGridData[row][column] 
+
+
+def updateStats(main_window):
+    # Draw the left rect
+    centerY = window_height/2 - (440)/2 
+    pygame.draw.rect(main_window, grey, (175, centerY, 200, 440))
+    pygame.draw.rect(main_window, darkGrey, (175, centerY, 200, 440), 5)
+
+    centerY = window_height/2 - (600)/2 
+    pygame.draw.rect(main_window, grey, (825, centerY, 200, 600))
+    pygame.draw.rect(main_window, darkGrey, (825, centerY, 200, 600), 5)
+
+
+    
+
     
 def gameLoop(main_window, clock):
     # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
+    queue = []
     piece = None
-    linesCleared = 50
+    linesCleared = 0
     placeCountdown = 0
     pieceInDownDirection = False
+    numOfPlacedPieces = 0
+    numOfPlacedPiecesAtSwap = -1
     helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
-    # gridData = createGrid(rows, columns)
+    pieceOnHold = None
+    for pieces in range(3):
+        appendPiece = tetrisPiece()
+        queue.append(appendPiece)
     while True:
-        if piece == None:
-            piece = tetrisPiece()
+        if len(queue) < 4:
+            appendPiece = tetrisPiece()
+            queue.append(appendPiece)
+        print(numOfPlacedPieces)
+        piece = queue[0]
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
@@ -649,21 +673,33 @@ def gameLoop(main_window, clock):
                 keys = pygame.key.get_pressed()
                 # this key will be changed to
                 # up arrow key once prog is finished
-                if keys[pygame.K_r]:
+                if keys[pygame.K_UP]:
                     piece.rotate()
-                    if piece == None:
-                        piece = tetrisPiece()
+                    piece = queue[0]
                 if keys[pygame.K_SPACE]:
                     piece.placePiece(gridData)
+                    numOfPlacedPieces += 1
+                    queue.pop(0)
                     piece = None
-                    if piece == None:
-                        piece = tetrisPiece()
+                    piece = queue[0]
                 if keys[pygame.K_ESCAPE]:
                     piece = None
-                    if piece == None:
-                        piece = tetrisPiece()
-        if piece == None:
-            piece = tetrisPiece()
+                    piece = queue[0]
+                if keys[pygame.K_z]:
+                    if numOfPlacedPiecesAtSwap != numOfPlacedPieces:
+                        # print("zzzzzzzz")
+                        numOfPlacedPiecesAtSwap = numOfPlacedPieces
+                        piece.x = (gameGridPosX - blockSize + columns // 2 * blockSize)
+                        piece.y = gameGridPosY
+                        piece.rotation = 0
+                        tempSwapPiece = piece
+                        queue.pop(0)
+                        if pieceOnHold != None:
+                            queue.insert(0, pieceOnHold)
+                            pieceOnHold = tempSwapPiece
+                        if pieceOnHold == None:
+                            pieceOnHold = tempSwapPiece
+        piece = queue[0]
         # print(piece.x, piece.y)
         # clock.tick(20)
         # time.sleep(0.2)
@@ -682,8 +718,8 @@ def gameLoop(main_window, clock):
 
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_UP]:
-            piece.moveUp()
+        # if keys[pygame.K_UP]:
+        #     piece.moveUp()
             # print("UP")
         if keys[pygame.K_DOWN]:
             pieceInDownDirection = piece.moveDown()
@@ -704,14 +740,23 @@ def gameLoop(main_window, clock):
             pieceInDownDirection = piece.moveDown()
             piece.dropCounter = 0
 
-        if placeCountdown < FPS*1.5:
+        if placeCountdown < FPS:
             placeCountdown += 1
+            
         else:
             if pieceInDownDirection == True:
                 piece.placePiece(gridData)
+                queue.pop(0)
+                numOfPlacedPieces += 1
                 piece = tetrisPiece()
             placeCountDown = 0
-            
+        
+        for i in queue:
+            for row in tetris_data[i.shape][i.rotation]:
+                print(row)
+            print("******************")
+        
+        updateStats(main_window)
 
         # linesCleared += 1
 
@@ -795,6 +840,13 @@ if __name__ == '__main__':
     gridData = createGrid(rows, columns)
 
     main_loop()
+
+# ppp = []
+# for i in range(3):
+#     p = random.randint(0,100)
+#     ppp.append(p)
+
+# print(ppp)
 
 
 
