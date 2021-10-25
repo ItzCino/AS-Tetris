@@ -325,7 +325,13 @@ class tetrisPiece:
 
     def placePiece(self, gridData):
         gridX = (self.x - gameGridPosX) // blockSize 
-        gridY = (self.y - gameGridPosY) // blockSize 
+        gridY = (self.y - gameGridPosY) // blockSize
+        while True:
+            if self.pieceInDirection('down', 0, None, gridY) is True:
+                break
+            else:
+                gridY += 1
+        print('out\nout')
         for coordinates in blockData[self.shape][self.rotation]:
             x = coordinates[0] 
             y = coordinates[1]
@@ -338,7 +344,7 @@ class tetrisPiece:
         # takes the rotation index of the piece that was selected.
         # print(self.shape)   
         self.rotation = self.rawRotationValue % len(blockData[self.shape])
-        print(self.rawRotationValue, self.rotation)
+        # print(self.rawRotationValue, self.rotation)
         
         for coordinates in blockData[self.shape][self.rotation]:
             x = coordinates[0] 
@@ -348,6 +354,25 @@ class tetrisPiece:
                                     (x * blockSize + self.x, 
                                     y * blockSize + self.y, 
                                     blockSize, blockSize))
+
+
+    def bottomGrid(self):
+        bottomGrid = False
+        gridX = round((self.x - gameGridPosX) / blockSize)    
+        gridY = round((self.y - gameGridPosY) / blockSize)
+        for coordinates in blockData[self.shape] \
+        [(self.rawRotationValue) % len(blockData[self.shape])]:
+            x = coordinates[0] + gridX
+            y = coordinates[1] + gridY
+            # print(x, y)
+            if y < 0 or y > (rows - 1):
+                print('pieceInRotation = true')
+                bottomGrid = True
+                return bottomGrid
+            if gridData[x][y] != squareColor:
+                bottomGrid = True
+
+        return bottomGrid
 
 
 # checks that the piece isn't out of grid before rotating
@@ -360,7 +385,7 @@ class tetrisPiece:
         [(self.rawRotationValue + 1) % len(blockData[self.shape])]:
             x = coordinates[0] + gridX
             y = coordinates[1] + gridY
-            print(x, y)
+            # print(x, y)
             if 0 > x or x > (columns - 1) or     \
                   y < 0 or y > (rows - 1):
                 print('pieceInRotation = true')
@@ -373,10 +398,19 @@ class tetrisPiece:
 
 
     # renamed from boundaryCheck to pieceInDirection
-    def pieceInDirection(self, direction, rotation=0):      
+    def pieceInDirection(self, direction, rotation=0, 
+                            currentPosX=None, currentPosY=None):      
         pieceInDirection = False
-        gridX = round((self.x - gameGridPosX) / blockSize)    
-        gridY = round((self.y - gameGridPosY) / blockSize)
+        if currentPosX is None:
+            gridX = round((self.x - gameGridPosX) / blockSize)
+        else:
+            gridX = currentPosX
+
+        if currentPosY is None:
+            gridY = round((self.y - gameGridPosY) / blockSize)
+        else:
+            gridY = currentPosY
+
         try:
             for coordinates in blockData[self.shape]                 \
                 [(self.rawRotationValue + rotation) %                \
@@ -414,13 +448,13 @@ class tetrisPiece:
                         return pieceInRotation
         except IndexError:
             pieceInDirection = True
-        print(pieceInDirection)
+        # print(pieceInDirection)
         return pieceInDirection
 
 
     def assistRotate(self):
         rotated = False
-        print('before:', self.rawRotationValue)
+        # print('before:', self.rawRotationValue)
         if rotated == False and self.pieceInDirection('down', 1) == False:
             self.rawRotationValue += 1
             self.y += blockSize
@@ -441,7 +475,7 @@ class tetrisPiece:
             self.y -= blockSize
             rotated = True
 
-        print('after:', self.rawRotationValue)  
+        # print('after:', self.rawRotationValue)  
 
 
     def rotate(self):
@@ -459,11 +493,20 @@ class tetrisPiece:
 
 
     def moveDown(self):
-        if (self.y + (len(tetris_data[self.shape][self.rotation]) * blockSize)) < self.bottomCord:
-            if self.pieceInDirection('down') == False:
+        pieceInDirection = self.pieceInDirection('down')
+
+        if (self.y + (len(tetris_data[self.shape]\
+        [self.rotation]) * blockSize)) < self.bottomCord:
+            if pieceInDirection == False:
                 self.dropCounter = 0
                 self.y += blockSize
-
+                print('NOT placed')
+        if pieceInDirection == True:
+            # self.placePiece(gridData)
+            print('placed')
+        
+        return pieceInDirection
+# bottomGrid
     def moveLeft(self):
         if (self.x - blockSize) >= gameGridPosX:
             if self.pieceInDirection('left') == False:
@@ -556,6 +599,8 @@ def gameLoop(main_window, clock):
     helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
     # gridData = createGrid(rows, columns)
     while True:
+        if piece == None:
+            piece = tetrisPiece()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
@@ -565,12 +610,18 @@ def gameLoop(main_window, clock):
                 # up arrow key once prog is finished
                 if keys[pygame.K_r]:
                     piece.rotate()
+                    if piece == None:
+                        piece = tetrisPiece()
                 if keys[pygame.K_SPACE]:
                     piece.placePiece(gridData)
-                
+                    piece = None
+                    if piece == None:
+                        piece = tetrisPiece()
                 if keys[pygame.K_ESCAPE]:
                     piece = None
-        if piece is None:
+                    if piece == None:
+                        piece = tetrisPiece()
+        if piece == None:
             piece = tetrisPiece()
         # print(piece.x, piece.y)
         # clock.tick(20)
@@ -593,7 +644,10 @@ def gameLoop(main_window, clock):
             piece.moveUp()
             # print("UP")
         if keys[pygame.K_DOWN]:
-            piece.moveDown()
+            # piece.moveDown()
+            if piece.moveDown() == True:
+                piece.dropCounter = 0
+                # piece = tetrisPiece()
             # print("DOWN")
         if keys[pygame.K_LEFT]:
             piece.moveLeft()
@@ -604,12 +658,15 @@ def gameLoop(main_window, clock):
         if piece.dropCounter < FPS :
             piece.dropCounter += (1 + linesCleared *acceleration)
         else:
-            piece.moveDown()
-
+            if piece.moveDown() == True:
+                piece.placePiece(gridData)
+                piece = tetrisPiece()
             piece.dropCounter = 0
+
+
         # linesCleared += 1
 
-        print('rate: ', (1 + linesCleared *0.5))
+        # print('rate: ', (1 + linesCleared *0.5))
         # print('lines cleared: ', linesCleared)
 
         # print(linesCleared)
