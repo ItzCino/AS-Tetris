@@ -25,7 +25,7 @@ rows = 23
 # clock = pygame.time.Clock()
 
 pygame.init()
-FPS = 20
+FPS = 15
 
 # Colors for pieces
 red = (192, 0, 0)
@@ -341,20 +341,24 @@ class tetrisPiece:
             gridData[gridX + x][gridY + y] = self.color
 
 
-    def drawPiece(self, surface):
-        # print(self.shape)
+    def drawPiece(self, surface, xPos=None, yPos=None):
         # takes the rotation index of the piece that was selected.
-        # print(self.shape)   
         self.rotation = self.rawRotationValue % len(blockData[self.shape])
-        # print(self.rawRotationValue, self.rotation)
-        
+        if xPos == None:
+            xValue = self.x
+        else: 
+            xValue = xPos
+        if yPos == None:
+            yValue = self.y
+        else: 
+            yValue = yPos
         for coordinates in blockData[self.shape][self.rotation]:
             x = coordinates[0] 
             y = coordinates[1]
             # Draws each square of each shape in relation to self.x and self.y position
             pygame.draw.rect(surface, block_colors[self.shape], 
-                                    (x * blockSize + self.x, 
-                                    y * blockSize + self.y, 
+                                    ((x * blockSize) + xValue, 
+                                    (y * blockSize) + yValue, 
                                     blockSize, blockSize))
 
 
@@ -605,6 +609,7 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
 
 
 def checkGrid(gridData):
+    cleared = 0
     altGridData = createCheckingGrid(rows, columns)
     # Convert from XY to YX format       
     for row in range(rows):
@@ -620,6 +625,7 @@ def checkGrid(gridData):
             newRow = [squareColor for roww in range(rows)]
             altGridData.pop(row)
             altGridData.insert(0, newRow)
+            cleared += 1
         # Ends game when a piece passes the red line
         if row == 2:
             for square in altGridData[row]:
@@ -630,28 +636,53 @@ def checkGrid(gridData):
     for column in range(columns):
         for row in range(rows):
             gridData[column][row] = altGridData[row][column] 
+    return cleared
 
-
-def updateStats(main_window):
-    # Draw the left rect
+def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold):
+    print(playerScore)
+    # Draw the left rect for score and lines cleared
     centerY = window_height/2 - (440)/2 
-    pygame.draw.rect(main_window, grey, (175, centerY, 200, 440))
-    pygame.draw.rect(main_window, darkGrey, (175, centerY, 200, 440), 5)
+    pygame.draw.rect(main_window, grey, (150, centerY, 225, 440))
+    pygame.draw.rect(main_window, darkGrey, (150, centerY, 225, 440), 5)
+    # shows the player score
+    scoreText = createText('Score', 30, white, 220, 330)
+    scoreText.drawText(main_window)
+    score = createText(str(playerScore), 25, white, 235, 380)
+    score.drawText(main_window)
+    # shows no of lines cleared
+    scoreText = createText('Lines Cleared', 30, white, 170, 475)
+    scoreText.drawText(main_window)
+    score = createText(str(linesCleared), 25, white, 240, 525)
+    score.drawText(main_window)
 
+    # Draw the left rect for queue pieces and pieces on 'hold'
     centerY = window_height/2 - (600)/2 
-    pygame.draw.rect(main_window, grey, (825, centerY, 200, 600))
-    pygame.draw.rect(main_window, darkGrey, (825, centerY, 200, 600), 5)
+    pygame.draw.rect(main_window, grey, (825, centerY, 225, 600))
+    pygame.draw.rect(main_window, darkGrey, (825, centerY, 225, 600), 5)\
+    # Draws the next pieces
+    nextText = createText('Next', 30, white, 900, 210)
+    nextText.drawText(main_window)
+    queue[1].drawPiece(main_window, 900, 270)
+    queue[2].drawPiece(main_window, 900, 425)
+    # Draws the hold pieces
+    holdText = createText('Hold', 30, white, 900, 580)
+    holdText.drawText(main_window)
+
+    if pieceOnHold != None:
+        pieceOnHold.drawPiece(main_window, 900, 630)
 
 
-    
 
-    
+    pos = pygame.mouse.get_pos()
+    print(pos)
+
 def gameLoop(main_window, clock):
     # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
     queue = []
     piece = None
     linesCleared = 0
     placeCountdown = 0
+    playerScore = 0
     pieceInDownDirection = False
     numOfPlacedPieces = 0
     numOfPlacedPiecesAtSwap = -1
@@ -661,6 +692,7 @@ def gameLoop(main_window, clock):
         appendPiece = tetrisPiece()
         queue.append(appendPiece)
     while True:
+        playerScore = linesCleared * 100
         if len(queue) < 4:
             appendPiece = tetrisPiece()
             queue.append(appendPiece)
@@ -713,7 +745,7 @@ def gameLoop(main_window, clock):
         gridX = round((piece.x - gameGridPosX) / blockSize)    
         gridY = round((piece.y - gameGridPosY) / blockSize)
         pieceInDownDirection = False
-        checkGrid(gridData)
+        linesCleared += checkGrid(gridData)
         # print('grid: ',gridX, gridY)
 
 
@@ -756,7 +788,7 @@ def gameLoop(main_window, clock):
                 print(row)
             print("******************")
         
-        updateStats(main_window)
+        updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold)
 
         # linesCleared += 1
 
