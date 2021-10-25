@@ -61,9 +61,8 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 blockData = []
-global gridData
-# gridData = []
 
+# Custom tetris pieces
 tetris_data = [
     # T shape 1
     [
@@ -145,8 +144,6 @@ tetris_data = [
         'ooo',
         'ooo',
         'ooo']]
-
-
 ]
 
 
@@ -174,6 +171,7 @@ class createText:
         window.blit(text_object, text_rect)
 
 
+# Creates the windows class
 class createWindow:
     def __init__(self, fontSize, fontColor, buttonColor, x, y, width=None, height=None, text=' '):
         self.fontSize = fontSize
@@ -188,6 +186,7 @@ class createWindow:
         self.currentButtonColor = buttonColor
         self.text = text
 
+    # Draws window to screen
     def drawWindow(self, window, padding, autoCenter=False, outline=False, outlineColor=None):
         main_menu_font = pygame.font.SysFont("Arial", self.fontSize)
         text_object = main_menu_font.render(self.text, 5, self.fontColor)
@@ -220,7 +219,6 @@ class createWindow:
 
         # Centering of text for button
         # Calculates the Topleft position for centering button
-        # print('before: ',text_rect)
 
         text_rect = text_object.get_rect()
         text_rect.topleft = self.pos
@@ -228,7 +226,6 @@ class createWindow:
         # Gets width + Height of the text object
         textDimensions = main_menu_font.size(self.text)
 
-        # print(main_menu_font.size(self.text))
         # Centering of text for button
         centerOfButtonX = text_rect[0] + (self.width // 2) - (textDimensions[0] // 2)
         centerOfButtonY = text_rect[1] + (self.height // 2) - (textDimensions[1] // 2)
@@ -244,7 +241,7 @@ class createWindow:
 
         window.blit(text_object, text_rect)
 
-
+# Creates buttons class
 class main_menu_buttons:
     def __init__(self, text, fontSize, fontColor, buttonColor, hoveringColor, x, y, func, width=None, height=None):
         self.text = text
@@ -261,6 +258,7 @@ class main_menu_buttons:
         self.currentButtonColor = buttonColor
         self.func = func
 
+    # check for mouse click and enables 'hovering' colors
     def hoveringOverButton(self):
         # Gets mouse position.
         mouse_position = pygame.mouse.get_pos()
@@ -283,6 +281,7 @@ class main_menu_buttons:
             # Otherwise do this: Revert Color of button to original color
             self.currentButtonColor = self.buttonColor
 
+    # Draws button to screen
     def drawButton(self, window, padding, autoCenter=False, outline=False, outlineColor=None):
         main_menu_font = pygame.font.SysFont("Arial", self.fontSize)
         text_object = main_menu_font.render(self.text, 5, self.fontColor)
@@ -315,7 +314,6 @@ class main_menu_buttons:
 
         # Centering of text for button
         # Calculates the Topleft position for centering button
-        # print('before: ',text_rect)
 
         text_rect = text_object.get_rect()
         text_rect.topleft = self.pos
@@ -323,7 +321,6 @@ class main_menu_buttons:
         # Gets width + Height of the text object
         textDimensions = main_menu_font.size(self.text)
 
-        # print(main_menu_font.size(self.text))
         # Centering of text for button
         centerOfButtonX = text_rect[0] + (self.width // 2) - (textDimensions[0] // 2)
         centerOfButtonY = text_rect[1] + (self.height // 2) - (textDimensions[1] // 2)
@@ -339,7 +336,7 @@ class main_menu_buttons:
 
         window.blit(text_object, text_rect)
 
-
+# Creates Tetris piece class
 class tetrisPiece:
     def __init__(self):
         self.x = (gameGridPosX - blockSize + columns // 2 * blockSize)
@@ -352,8 +349,7 @@ class tetrisPiece:
         self.color = block_colors[self.shape]
         self.dropCounter = 0
 
-        # print(self.x, self.y)
-
+    # places the piece
     def placePiece(self, gridData, dropRate='instant'):
         gridX = (self.x - gameGridPosX) // blockSize
         gridY = (self.y - gameGridPosY) // blockSize
@@ -363,13 +359,12 @@ class tetrisPiece:
                     break
                 else:
                     gridY += 1
-        print('out\nout')
         for coordinates in blockData[self.shape][self.rotation]:
             x = coordinates[0]
             y = coordinates[1]
-            # print(x, y)
             gridData[gridX + x][gridY + y] = self.color
 
+    # Draws the piece to the screen
     def drawPiece(self, surface, xPos=None, yPos=None):
         # takes the rotation index of the piece that was selected.
         self.rotation = self.rawRotationValue % len(blockData[self.shape])
@@ -387,6 +382,7 @@ class tetrisPiece:
             # Draws each square of each shape in relation to self.x and self.y position
             pygame.draw.rect(surface, block_colors[self.shape], ((x * blockSize) + xValue, (y * blockSize) + yValue, blockSize, blockSize))
 
+    # checks if the piece is at the bottom of the grid
     def bottomGrid(self):
         bottomGrid = False
         gridX = round((self.x - gameGridPosX) / blockSize)
@@ -425,6 +421,7 @@ class tetrisPiece:
         return pieceInRotation
 
     # renamed from boundaryCheck to pieceInDirection
+    # Checks if there is a piece or the grid edge in the direction of which the piece is moving in
     def pieceInDirection(self, direction, rotation=0, currentPosX=None, currentPosY=None):
         pieceInDirection = False
         if currentPosX is None:
@@ -471,6 +468,7 @@ class tetrisPiece:
         # print(pieceInDirection)
         return pieceInDirection
 
+    # assist in rotating the piece if there are pieces in the way
     def assistRotate(self):
         rotated = False
         # print('before:', self.rawRotationValue)
@@ -494,6 +492,7 @@ class tetrisPiece:
             self.y -= blockSize
             rotated = True
 
+    # rotate the piece if allowed
     def rotate(self):
         if self.rotationBoundaryCheck() is False:
             self.rawRotationValue += 1
@@ -501,37 +500,40 @@ class tetrisPiece:
         else:
             self.assistRotate()
 
+    # moves the piece in up direction (used for testing)
     def moveUp(self):
         if (self.y - blockSize) >= gameGridPosY:
             if self.pieceInDirection('up') is False:
                 self.y -= blockSize
 
+    # Moves the piece in the down direction
     def moveDown(self):
         pieceInDirection = self.pieceInDirection('down')
-
         if (self.y + (len(tetris_data[self.shape][self.rotation]) * blockSize)) < self.bottomCord:
             if pieceInDirection is False:
                 self.dropCounter = 0
                 self.y += blockSize
         return pieceInDirection
 
-# bottomGrid
+    # Moves the tetris piece in the left direction 
     def moveLeft(self):
         if (self.x - blockSize) >= gameGridPosX:
             if self.pieceInDirection('left') is False:
                 self.x -= blockSize
 
+    # Moves the tetris piece in the right direction 
     def moveRight(self):
         if (self.x + (len(tetris_data[self.shape][self.rotation][0]) * blockSize)) < self.rightCord:
             if self.pieceInDirection('right') is False:
                 self.x += blockSize
 
+    # Checks cords (used for debugging)
     def checkCords(self):
-        # print(self.x, self.y)
-        # print(self.rawRotationValue)
+        print(self.x, self.y)
+        print(self.rawRotationValue)
         pass
 
-
+# Convert from custom tetris file to coordinates for (ie how the blocks are placed)
 def convertTetrisData(blockData):
     positions = []
     for shape in blockData:
@@ -551,7 +553,7 @@ def convertTetrisData(blockData):
     print(positions)
     return positions
 
-
+# Creates grid that is 10 by 20
 def createGrid(rows, columns):
     # change this to grey later
     finishedGrid = []
@@ -559,7 +561,7 @@ def createGrid(rows, columns):
 
     return finishedGrid
 
-
+# Creates grid that is 20 by 10
 def createCheckingGrid(rows, columns):
     # change this to grey later
     finishedGrid = []
@@ -602,7 +604,7 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
     # Creates Border
     pygame.draw.rect(surface, darkGrey, (x, y, width, height), 5)
 
-
+# checks grid and full rows
 def checkGrid(gridData, linesCleared):
     running = True
     cleared = linesCleared
@@ -634,7 +636,7 @@ def checkGrid(gridData, linesCleared):
             gridData[column][row] = altGridData[row][column]
     return running, cleared
 
-
+# updates the stats on the GUI interface
 def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold):
     print(playerScore)
     # Draw the left rect for score and lines cleared
@@ -657,6 +659,9 @@ def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold):
     pygame.draw.rect(main_window, grey, (825, centerY, 225, 750))
     pygame.draw.rect(main_window, darkGrey, (825, centerY, 225, 750), 5)\
         # Draws the next pieces
+    if len(queue) < 4:
+            appendPiece = tetrisPiece()
+            queue.append(appendPiece)
     nextText = createText('Next', 30, white, 900, 210)
     nextText.drawText(main_window)
     queue[1].drawPiece(main_window, 900, 270)
@@ -671,9 +676,9 @@ def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold):
     pos = pygame.mouse.get_pos()
     print(pos)
 
-
+    return queue
+# main Game loop
 def gameLoop(main_window, clock):
-    # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125)
     runningState = True
     queue = []
     piece = None
@@ -683,7 +688,6 @@ def gameLoop(main_window, clock):
     pieceInDownDirection = False
     numOfPlacedPieces = 0
     numOfPlacedPiecesAtSwap = -1
-    backButton = main_menu_buttons("Back", 85, white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
     pieceOnHold = None
     global gridData
     gridData = createGrid(rows, columns)
@@ -729,7 +733,6 @@ def gameLoop(main_window, clock):
         piece = queue[0]
 
         main_window.fill(lightGrey)
-        backButton.drawButton(main_window, 8, False, True, darkOrange)
         piece.checkCords()
         drawGrid(main_window, gameGridPosX, gameGridPosY, rows, columns, blockSize, gridData, piece)
         gridX = round((piece.x - gameGridPosX) / blockSize)
@@ -773,15 +776,38 @@ def gameLoop(main_window, clock):
                 print(row)
             print("******************")
 
-        updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold)
+        queue = updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold)
 
         clock.tick(FPS)
         pygame.display.update()
         if runningState is False:
-            mainMenu(main_window, clock)
+            gameOverScreen(main_window, clock, playerScore)
 
+# Game over screen
+def gameOverScreen(main_window, clock, playerScore):
+    gameOverContainer = createWindow(30, white, grey, 600, 250, 600, 400)
+    gameOverText = createText('GAMEOVER', 110, white, 50, 275)
+    scoreText = createText('Score: ' + str(playerScore), 30, white, 220, 425)
+    playAgainButton = main_menu_buttons("Play Again", 45, white, green, darkerGreen, 325, 500, lambda: gameLoop(main_window, clock), 250, 100)
+    mainMenuButton = main_menu_buttons("Main Menu", 45, white, red, darkerRed, 615, 500, lambda: mainMenu(main_window, clock), 250, 100)
 
+    while True:
+        main_window.fill(lightGrey)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+        print("GAMEOVER")
+        gameOverContainer.drawWindow(main_window, 5, True, True, darkGrey)
+        gameOverText.drawText(main_window, True)
+        scoreText.drawText(main_window, True)
+        playAgainButton.drawButton(main_window, 8, False, True, darkGreen)
+        mainMenuButton.drawButton(main_window, 8, False, True, darkRed)
+        clock.tick(FPS)
+        pygame.display.update()
+
+# Create help Window + objects
 def helpWindow(main_window, clock):
+    # Creates buttons and text
     backButton = main_menu_buttons("Back", 65, white, orange, darkerOrange, 20, 725, lambda: mainMenu(main_window, clock), 200, 100)
     helpContainer = createWindow(30, white, orange, 50, 50, 1100, 800)
     helpTitle = createText('How to play', 75, white, 50, 100)
@@ -800,7 +826,8 @@ def helpWindow(main_window, clock):
     body11 = createText('You must not let any Tetris piece go past the red line ', 30, white, 50, 600)
     body12 = createText('otherwise the game will be over', 30, white, 50, 630)
     body13 = createText('Happy Tetrising! ', 30, white, 50, 660)
-
+    
+    # Clears screen and writes the text to the screen
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -826,7 +853,7 @@ def helpWindow(main_window, clock):
         clock.tick(FPS)
         pygame.display.update()
 
-
+# closes the game
 def exitGame(main_window, clock):
     # exitButton = main_menu_buttons("Exit", 100,  white, red, darkerRed, 390, 550, exit, 300, 125)
     while True:
@@ -839,7 +866,7 @@ def exitGame(main_window, clock):
         clock.tick(FPS)
         pygame.display.update()
 
-
+# creates main Menu with buttons
 def mainMenu(main_window, clock):
     pygame.display.set_caption("Main Menu")
     tetris = createText('TETRIS', 100, darkGrey, 390, 35)
@@ -869,6 +896,7 @@ def main_loop():
         clock = pygame.time.Clock()
         mainMenu(main_window, clock)
 
+# checks to ensure this TetrisMain.py is the file being run before main program executes
 if __name__ == '__main__':
     blockData = convertTetrisData(tetris_data)
     # gridData = createGrid(rows, columns)
