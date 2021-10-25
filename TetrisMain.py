@@ -61,7 +61,8 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 blockData = []
-gridData = []
+global gridData
+# gridData = []
 
 tetris_data = [
     # T shape 1
@@ -602,8 +603,9 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
     pygame.draw.rect(surface, darkGrey, (x, y, width, height), 5)
 
 
-def checkGrid(gridData):
-    cleared = 0
+def checkGrid(gridData, linesCleared):
+    running = True
+    cleared = linesCleared
     altGridData = createCheckingGrid(rows, columns)
     # Convert from XY to YX format
     for row in range(rows):
@@ -625,12 +627,12 @@ def checkGrid(gridData):
             for square in altGridData[row]:
                 if square != squareColor:
                     print('GAMEOVER')
-                    exit()
+                    running = False
     # Convert from YX back to XY format
     for column in range(columns):
         for row in range(rows):
             gridData[column][row] = altGridData[row][column]
-    return cleared
+    return running, cleared
 
 
 def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold):
@@ -672,6 +674,7 @@ def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold):
 
 def gameLoop(main_window, clock):
     # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125)
+    runningState = True
     queue = []
     piece = None
     linesCleared = 0
@@ -682,10 +685,12 @@ def gameLoop(main_window, clock):
     numOfPlacedPiecesAtSwap = -1
     backButton = main_menu_buttons("Back", 85, white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
     pieceOnHold = None
+    global gridData
+    gridData = createGrid(rows, columns)
     for pieces in range(3):
         appendPiece = tetrisPiece()
         queue.append(appendPiece)
-    while True:
+    while runningState:
         playerScore = linesCleared * 100
         if len(queue) < 4:
             appendPiece = tetrisPiece()
@@ -730,7 +735,7 @@ def gameLoop(main_window, clock):
         gridX = round((piece.x - gameGridPosX) / blockSize)
         gridY = round((piece.y - gameGridPosY) / blockSize)
         pieceInDownDirection = False
-        linesCleared += checkGrid(gridData)
+        runningState, linesCleared = checkGrid(gridData, linesCleared)
 
         keys = pygame.key.get_pressed()
 
@@ -772,6 +777,8 @@ def gameLoop(main_window, clock):
 
         clock.tick(FPS)
         pygame.display.update()
+        if runningState is False:
+            mainMenu(main_window, clock)
 
 
 def helpWindow(main_window, clock):
@@ -864,6 +871,6 @@ def main_loop():
 
 if __name__ == '__main__':
     blockData = convertTetrisData(tetris_data)
-    gridData = createGrid(rows, columns)
+    # gridData = createGrid(rows, columns)
 
     main_loop()
