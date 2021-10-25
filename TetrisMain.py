@@ -11,7 +11,7 @@ acceleration = 0.2
 # dropCounter = 0
 
 window_width = 1200
-window_height = 800
+window_height = 900
 window_size = (window_width, window_height)
 
 linesCleared = 0
@@ -19,7 +19,7 @@ gameGridPosX = 425
 gameGridPosY = 50
 blockSize = 35
 columns = 10
-rows = 20
+rows = 23
 
 # main_window = pygame.display.set_mode(window_size)
 # clock = pygame.time.Clock()
@@ -145,16 +145,17 @@ tetris_data = [
     # Box Shape 7:
     [[
       'oo',
-      'oo']],
-    [[
-        '..o..',
-        '..o..',
-        '..o..',
-        '..o..',
-        'oo.oo',
-        'o...o'
+      'oo']]
+    #   ,
+    # [[
+    #     '..o..',
+    #     '..o..',
+    #     '..o..',
+    #     '..o..',
+    #     'oo.oo',
+    #     'o...o'
 
-    ]]
+    # ]]
 ]
 
 
@@ -501,10 +502,10 @@ class tetrisPiece:
             if pieceInDirection == False:
                 self.dropCounter = 0
                 self.y += blockSize
-                print('NOT placed')
-        if pieceInDirection == True:
-            # self.placePiece(gridData)
-            print('placed')
+                # print('NOT placed')
+        # if pieceInDirection == True:
+        #     # self.placePiece(gridData)
+        #     print('placed')
         return pieceInDirection
 # bottomGrid
     def moveLeft(self):
@@ -552,6 +553,13 @@ def createGrid(rows, columns):
 
     return finishedGrid
 
+def createCheckingGrid(rows, columns):
+    # change this to grey later
+    finishedGrid = []
+    finishedGrid = [[squareColor for columns in range(columns)] for row in range(rows)]
+
+    return finishedGrid
+
 
 # Draws a 10 x 20 grid 
 def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
@@ -582,6 +590,9 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
     x = startX
     for row in range(rows):
         pygame.draw.line(surface, grey, (x, y) ,(x + width, y), 2)
+        if row == 3:
+            pygame.draw.line(surface, red, (x, y) ,(x + width, y), 3)
+
         y += blockSize
     y = startY
     
@@ -592,10 +603,38 @@ def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
 
     # exit()
 
+
+def checkGrid(gridData):
+    altGridData = createCheckingGrid(rows, columns)
+    # Convert from XY to YX format       
+    for row in range(rows):
+        for column in range(columns):
+            altGridData[row][column] =  gridData[column][row]
+    # Checks for full rows and clears them
+    for row in range(len(altGridData)):
+        filled = True
+        for square in altGridData[row]:
+            if square == squareColor:
+                filled = False
+        if filled == True:
+            newRow = [squareColor for roww in range(rows)]
+            altGridData.pop(row)
+            altGridData.insert(0, newRow)
+        # Ends game when a piece passes the red line
+        if row == 2:
+            for square in altGridData[row]:
+                if square != squareColor:
+                    print('GAMEOVER')
+                    exit()
+    # Convert from YX back to XY format       
+    for column in range(columns):
+        for row in range(rows):
+            gridData[column][row] = altGridData[row][column] 
+    
 def gameLoop(main_window, clock):
     # exitButton = main_menu_buttons("Exit", 100, white, red, darkerRed, 400, 550, exit, 210, 125) 
     piece = None
-    linesCleared = 0
+    linesCleared = 50
     placeCountdown = 0
     pieceInDownDirection = False
     helpButton = main_menu_buttons("Back", 85,  white, orange, darkerOrange, 20, 20, lambda: mainMenu(main_window, clock), 225, 125)
@@ -638,6 +677,7 @@ def gameLoop(main_window, clock):
         gridX = round((piece.x - gameGridPosX) / blockSize)    
         gridY = round((piece.y - gameGridPosY) / blockSize)
         pieceInDownDirection = False
+        checkGrid(gridData)
         # print('grid: ',gridX, gridY)
 
 
