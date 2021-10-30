@@ -341,7 +341,7 @@ class tetrisPiece:
     def __init__(self):
         self.x = (gameGridPosX - blockSize + columns // 2 * blockSize)
         self.y = gameGridPosY
-        self.bottomCord = gameGridPosY + (rows * blockSize)
+        self.bottomCord = gameGridPosY + ((rows-1) * blockSize)
         self.rightCord = gameGridPosX + (columns * blockSize)
         self.rawRotationValue = 0
         self.rotation = 0
@@ -509,7 +509,7 @@ class tetrisPiece:
     # Moves the piece in the down direction
     def moveDown(self):
         pieceInDirection = self.pieceInDirection('down')
-        if (self.y + (len(tetris_data[self.shape][self.rotation]) * blockSize)) < self.bottomCord:
+        if self.bottomCord >= (self.y + (len(tetris_data[self.shape][self.rotation]) * blockSize)):
             if pieceInDirection is False:
                 self.dropCounter = 0
                 self.y += blockSize
@@ -682,7 +682,7 @@ def gameLoop(main_window, clock):
     runningState = True
     queue = []
     piece = None
-    linesCleared = 0
+    linesCleared = 100
     placeCountdown = 0
     playerScore = 0
     pieceInDownDirection = False
@@ -743,8 +743,9 @@ def gameLoop(main_window, clock):
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_DOWN]:
-            pieceInDownDirection = piece.moveDown()
-            if pieceInDownDirection is True:
+            if piece.pieceInDirection('down') is False:
+                pieceInDownDirection = piece.moveDown()
+            else:
                 piece.dropCounter = 0
                 placeCountdown = 0
 
@@ -759,22 +760,27 @@ def gameLoop(main_window, clock):
         else:
             pieceInDownDirection = piece.moveDown()
             piece.dropCounter = 0
+            if piece.pieceInDirection('down') is False:
+                placeCountdown = 0
 
-        if placeCountdown < FPS:
+
+        if placeCountdown <= FPS*1.75:
             placeCountdown += 1
 
-        else:
+        if placeCountdown >= FPS*1.75:
+            pieceInDownDirection = piece.pieceInDirection('down')
             if pieceInDownDirection is True:
                 piece.placePiece(gridData)
                 queue.pop(0)
                 numOfPlacedPieces += 1
-                piece = tetrisPiece()
+                # piece = tetrisPiece()
+                piece = queue[0]
             placeCountDown = 0
 
-        for i in queue:
-            for row in tetris_data[i.shape][i.rotation]:
-                print(row)
-            print("******************")
+        # for i in queue:
+        #     for row in tetris_data[i.shape][i.rotation]:
+        #         print(row)
+        #     print("******************")
 
         queue = updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold)
 
