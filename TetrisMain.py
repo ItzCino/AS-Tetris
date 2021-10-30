@@ -682,7 +682,7 @@ def gameLoop(main_window, clock):
     runningState = True
     queue = []
     piece = None
-    linesCleared = 100
+    linesCleared = 0
     placeCountdown = 0
     playerScore = 0
     pieceInDownDirection = False
