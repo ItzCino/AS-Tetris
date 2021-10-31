@@ -881,11 +881,16 @@ def gameOverScreen(main_window, clock, playerScore):
     playAgainButton = main_menu_buttons("Play Again", 45, white, green, darkerGreen, 435, 500, lambda: gameLoop(main_window, clock), 250, 100)
     mainMenuButton = main_menu_buttons("Main Menu", 45, white, red, darkerRed, 715, 500, lambda: mainMenu(main_window, clock), 250, 100)
 
+    highScoreText = createText('NEW HIGH SCORE!', 25, red, 470, 385)
+
+
     while True:
+        textColor = white
+        startY = 375
         main_window.fill(lightGrey)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                exit()
+                exit()  
         # print("GAMEOVER")
         gameOverContainer.drawWindow(main_window, 5, False, True, darkGrey)
         gameOverText.drawText(main_window, True, 400, 1000)
@@ -898,30 +903,21 @@ def gameOverScreen(main_window, clock, playerScore):
         leaderboardScoreText.drawText(main_window, True, 105, 180)
         leaderboardTimelimitText.drawText(main_window, True, 180, 325)
 
-        # Scores
-        # scores = [1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1700]
-        # scores.append(playerScore)
-        # # print(scores)
-        # scores.sort()
-        # scores.reverse()
-
-        startY = 375
         for num in range(0, len(scores)):
-            score = createText(str(scores[num]), 25, white, 180-(13*len(str(scores[num]))), startY+(num*30))
+            textColor = white
+            if playerScore == scores[num]:
+                textColor = red
+                highScoreText.drawText(main_window, True, 400, 1000)
+            score = createText(str(scores[num]), 25, textColor, 180-(13*len(str(scores[num]))), startY+(num*30))
             score.drawText(main_window, False, 75, 180)
             if data[scores[num]] == 0:
-                timeLimit = createText('∞', 25, white, 180, startY+(num*30))
+                timeLimit = createText('∞', 25, textColor, 180, startY+(num*30))
                 timeLimit.drawText(main_window, True, 180, 325)
             else:
-                timeLimit = createText(str(data[scores[num]]), 25, white, 180, startY+(num*30))
+                timeLimit = createText(str(data[scores[num]]), 25, textColor, 180, startY+(num*30))
                 timeLimit.drawText(main_window, True, 180, 325)
 
 
-
-
-
-
-        
         clock.tick(FPS)
         pygame.display.update()
 
@@ -1074,3 +1070,4 @@ if __name__ == '__main__':
     # gridData = createGrid(rows, columns)
 
     main_loop()
+    
