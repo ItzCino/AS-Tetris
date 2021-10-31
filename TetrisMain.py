@@ -887,6 +887,7 @@ def gameOverScreen(main_window, clock, playerScore):
     while True:
         textColor = white
         startY = 375
+        highScore = False
         main_window.fill(lightGrey)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -905,7 +906,8 @@ def gameOverScreen(main_window, clock, playerScore):
 
         for num in range(0, len(scores)):
             textColor = white
-            if playerScore == scores[num]:
+            if playerScore == scores[num] and highScore is False:
+                highScore = True
                 textColor = red
                 highScoreText.drawText(main_window, True, 400, 1000)
             score = createText(str(scores[num]), 25, textColor, 180-(13*len(str(scores[num]))), startY+(num*30))
