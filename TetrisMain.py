@@ -6,6 +6,9 @@ import pygame
 import random
 
 acceleration = 0.2
+gameLength = 0  # Sets the length of the game (in seconds). Set to value to 0 for NO time limit
+pygame.init()
+FPS = 15
 
 window_width = 1200
 window_height = 900
@@ -18,8 +21,7 @@ blockSize = 35
 columns = 10
 rows = 23
 
-pygame.init()
-FPS = 15
+
 
 # Colors for pieces
 red = (192, 0, 0)
@@ -141,8 +143,20 @@ tetris_data = [
       'oo',
       'oo']],
     [[
+        'o..',
+        'o..',
+        'ooo'],
+        [
         'ooo',
+        'o..',
+        'o..'],
+        [
         'ooo',
+        '..o',
+        '..o'],
+        [
+        '..o',
+        '..o',
         'ooo']]
 ]
 
@@ -156,8 +170,15 @@ class createText:
         self.x = x
         self.y = y
 
-    # Draws text to screen
-    def drawText(self, window, autoCenter=False):
+    # Draws text to screen + centers it if autoCenter is True
+    def drawText(self, window, autoCenter=False, startingXPos=None, endingXPos=None):
+        if startingXPos is None:
+            startingXPos = window_width / 2
+        if endingXPos is None:
+            endingXPos = window_width / 2
+        
+        centerX = (startingXPos + endingXPos) / 2
+
         main_menu_font = pygame.font.SysFont("Arial", self.fontSize)
         text_object = main_menu_font.render(self.text, 5, self.fontColor)
         text_rect = text_object.get_rect()
@@ -166,7 +187,7 @@ class createText:
         textDimensions = main_menu_font.size(self.text)
         # centers the text on the x axis of the window if True
         if autoCenter:
-            text_rect[0] = (window_width / 2) - (textDimensions[0] / 2)
+            text_rect[0] = centerX - (textDimensions[0] / 2)
         # print(textDimensions)
         window.blit(text_object, text_rect)
 
@@ -193,7 +214,7 @@ class createWindow:
         text_rect = text_object.get_rect()
         text_rect.topleft = self.pos
 
-        # Draws background area for button
+        # Draws background area for Window
 
         if self.width is not None:
             text_rect[2] = self.width
@@ -213,12 +234,11 @@ class createWindow:
                                                     text_rect[3] + 2 * padding))
 
         self.text_rect = text_rect
-        # self.hoveringOverButton()
 
         pygame.draw.rect(window, self.currentButtonColor, text_rect)
 
-        # Centering of text for button
-        # Calculates the Topleft position for centering button
+        # Centering of text for window
+        # Calculates the Topleft position for centering window
 
         text_rect = text_object.get_rect()
         text_rect.topleft = self.pos
@@ -645,14 +665,14 @@ def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold):
     pygame.draw.rect(main_window, darkGrey, (150, centerY, 225, 440), 5)
     # shows the player score
     scoreText = createText('Score', 30, white, 220, 330)
-    scoreText.drawText(main_window)
+    scoreText.drawText(main_window, True, 150, 375)
     score = createText(str(playerScore), 25, white, 235, 380)
-    score.drawText(main_window)
+    score.drawText(main_window, True, 150, 375)
     # shows no of lines cleared
     scoreText = createText('Lines Cleared', 30, white, 170, 475)
-    scoreText.drawText(main_window)
+    scoreText.drawText(main_window, True, 150, 375)
     score = createText(str(linesCleared), 25, white, 240, 525)
-    score.drawText(main_window)
+    score.drawText(main_window, True, 150, 375)
 
     # Draw the left rect for queue pieces and pieces on 'hold'
     centerY = window_height / 2 - (750) / 2
@@ -665,6 +685,9 @@ def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold):
     nextText = createText('Next', 30, white, 900, 210)
     nextText.drawText(main_window)
     queue[1].drawPiece(main_window, 900, 270)
+    if len(queue) < 4:
+            appendPiece = tetrisPiece()
+            queue.append(appendPiece)
     queue[2].drawPiece(main_window, 900, 425)
     # Draws the hold pieces
     holdText = createText('Hold', 30, white, 900, 580)
@@ -689,13 +712,15 @@ def gameLoop(main_window, clock):
     numOfPlacedPieces = 0
     numOfPlacedPiecesAtSwap = -1
     pieceOnHold = None
+    varGameTimer = 0
+    gameTimer = 0
     global gridData
     gridData = createGrid(rows, columns)
     for pieces in range(3):
         appendPiece = tetrisPiece()
         queue.append(appendPiece)
     while runningState:
-        playerScore = linesCleared * 100
+        playerScore = (numOfPlacedPieces * 100) + (linesCleared * 450)
         if len(queue) < 4:
             appendPiece = tetrisPiece()
             queue.append(appendPiece)
@@ -732,20 +757,12 @@ def gameLoop(main_window, clock):
                             pieceOnHold = tempSwapPiece
         piece = queue[0]
 
-        main_window.fill(lightGrey)
-        piece.checkCords()
-        drawGrid(main_window, gameGridPosX, gameGridPosY, rows, columns, blockSize, gridData, piece)
-        gridX = round((piece.x - gameGridPosX) / blockSize)
-        gridY = round((piece.y - gameGridPosY) / blockSize)
-        pieceInDownDirection = False
-        runningState, linesCleared = checkGrid(gridData, linesCleared)
-
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_DOWN]:
             if piece.pieceInDirection('down') is False:
                 pieceInDownDirection = piece.moveDown()
-            else:
+            if piece.pieceInDirection('down') is True:
                 piece.dropCounter = 0
                 placeCountdown = 0
 
@@ -762,6 +779,14 @@ def gameLoop(main_window, clock):
             piece.dropCounter = 0
             if piece.pieceInDirection('down') is False:
                 placeCountdown = 0
+        
+        if varGameTimer < FPS:
+            varGameTimer += 1
+        else:
+            varGameTimer = 0
+            gameTimer += 1
+            if gameTimer == gameLength:
+                gameOverScreen(main_window, clock, playerScore)
 
 
         if placeCountdown <= FPS*1.75:
@@ -782,6 +807,14 @@ def gameLoop(main_window, clock):
         #         print(row)
         #     print("******************")
 
+        main_window.fill(lightGrey)
+        piece.checkCords()
+        drawGrid(main_window, gameGridPosX, gameGridPosY, rows, columns, blockSize, gridData, piece)
+        gridX = round((piece.x - gameGridPosX) / blockSize)
+        gridY = round((piece.y - gameGridPosY) / blockSize)
+        pieceInDownDirection = False
+        runningState, linesCleared = checkGrid(gridData, linesCleared)
+
         queue = updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold)
 
         clock.tick(FPS)
@@ -789,25 +822,106 @@ def gameLoop(main_window, clock):
         if runningState is False:
             gameOverScreen(main_window, clock, playerScore)
 
+
+# Updates the leadboards and reads and write data to the leaderboards.
+def parseLeaderboards(playerScore, gameLength):
+    data = {}
+    dataList = []
+    tempDataList = [] 
+
+    # Writes latest score
+    leaderboardFile = open('Leaderboards_' + str(gameLength) + '_Seconds.txt', 'a+')
+    leaderboardFile.write('{}:{}\n'.format(playerScore, gameLength))
+    leaderboardFile = open('Leaderboards_' + str(gameLength) + '_Seconds.txt', 'r')
+
+    # Stores scores in a temp list
+    lines = leaderboardFile.read().split()
+    for line in lines:
+        if len(line) <= 1:
+            pass
+        lineList = line.split(':')
+        score = int(lineList[0])
+        data[score] = int(lineList[1])
+        tempDataList.append(score)
+    tempDataList.sort()
+    tempDataList.reverse()
+
+    # Gets top 8 scores
+    for value in range(0, len(tempDataList)):
+        if len(dataList) < 8:
+            dataList.append(tempDataList[value])  
+
+    leaderboardFile = open('Leaderboards_' + str(gameLength) + '_Seconds.txt', 'w')
+    leaderboardFile = open('Leaderboards_' + str(gameLength) + '_Seconds.txt', 'a+')
+
+    # Writes top 8 scores to leaderboardFile
+    for value in range(0, len(dataList)):
+        leaderboardFile.write('{}:{}\n'.format(dataList[value], 
+                                        data[dataList[value]]))
+        print(dataList[value], data[dataList[value]])
+    leaderboardFile.close()
+
+    return dataList, data
+    
+
 # Game over screen
 def gameOverScreen(main_window, clock, playerScore):
-    gameOverContainer = createWindow(30, white, grey, 600, 250, 600, 400)
-    gameOverText = createText('GAMEOVER', 110, white, 50, 275)
-    scoreText = createText('Score: ' + str(playerScore), 30, white, 220, 425)
-    playAgainButton = main_menu_buttons("Play Again", 45, white, green, darkerGreen, 325, 500, lambda: gameLoop(main_window, clock), 250, 100)
-    mainMenuButton = main_menu_buttons("Main Menu", 45, white, red, darkerRed, 615, 500, lambda: mainMenu(main_window, clock), 250, 100)
+
+    scores, data = parseLeaderboards(playerScore, gameLength)
+
+    centerY = window_height / 2 - (400) / 2
+    leaderboardsContainer = createWindow(30, white, grey, 75, centerY, 250, 400)
+    leaderboardsText = createText('Top 8 Leaderboards', 25, white, 75, 290)
+    leaderboardScoreText = createText('Score:', 25, white, 75, 335)
+    leaderboardTimelimitText = createText('Time Limit:', 25, white, 75, 335)
+
+    gameOverContainer = createWindow(30, white, grey, 400, 250, 600, 400)
+    gameOverText = createText('GAMEOVER', 95, white, 400, 275)
+    scoreText = createText('Score: ' + str(playerScore), 30, white, 470, 425)
+    playAgainButton = main_menu_buttons("Play Again", 45, white, green, darkerGreen, 435, 500, lambda: gameLoop(main_window, clock), 250, 100)
+    mainMenuButton = main_menu_buttons("Main Menu", 45, white, red, darkerRed, 715, 500, lambda: mainMenu(main_window, clock), 250, 100)
 
     while True:
         main_window.fill(lightGrey)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
-        print("GAMEOVER")
-        gameOverContainer.drawWindow(main_window, 5, True, True, darkGrey)
-        gameOverText.drawText(main_window, True)
-        scoreText.drawText(main_window, True)
+        # print("GAMEOVER")
+        gameOverContainer.drawWindow(main_window, 5, False, True, darkGrey)
+        gameOverText.drawText(main_window, True, 400, 1000)
+        scoreText.drawText(main_window, True, 400, 1000)
         playAgainButton.drawButton(main_window, 8, False, True, darkGreen)
         mainMenuButton.drawButton(main_window, 8, False, True, darkRed)
+         
+        leaderboardsContainer.drawWindow(main_window, 5, False, True, darkGrey)
+        leaderboardsText.drawText(main_window, True, 75, 325)
+        leaderboardScoreText.drawText(main_window, True, 105, 180)
+        leaderboardTimelimitText.drawText(main_window, True, 180, 325)
+
+        # Scores
+        # scores = [1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1700]
+        # scores.append(playerScore)
+        # # print(scores)
+        # scores.sort()
+        # scores.reverse()
+
+        startY = 375
+        for num in range(0, len(scores)):
+            score = createText(str(scores[num]), 25, white, 180-(13*len(str(scores[num]))), startY+(num*30))
+            score.drawText(main_window, False, 75, 180)
+            if data[scores[num]] == 0:
+                timeLimit = createText('∞', 25, white, 180, startY+(num*30))
+                timeLimit.drawText(main_window, True, 180, 325)
+            else:
+                timeLimit = createText(str(data[scores[num]]), 25, white, 180, startY+(num*30))
+                timeLimit.drawText(main_window, True, 180, 325)
+
+
+
+
+
+
+        
         clock.tick(FPS)
         pygame.display.update()
 
@@ -817,24 +931,47 @@ def helpWindow(main_window, clock):
     backButton = main_menu_buttons("Back", 65, white, orange, darkerOrange, 20, 725, lambda: mainMenu(main_window, clock), 200, 100)
     helpContainer = createWindow(30, white, orange, 50, 50, 1100, 800)
     helpTitle = createText('How to play', 75, white, 50, 100)
-    body1 = createText('Welcome!', 30, white, 50, 220)
-    body2 = createText('The object of the game is to stay alive for as long as possible ', 30, white, 50, 280)
-    body3 = createText('and to clear as many lines a possible.', 30, white, 50, 310)
-    body4 = createText('To clear a line, you will need to fill an entire row with the ', 30, white, 50, 340)
+    body1 = createText('Welcome!', 30, white, 100, 220)
+    body2 = createText('The object of the game is to stay alive for as long ', 30, white, 100, 280)
+    body3 = createText('as possible and to clear as many lines a possible.', 30, white, 100, 310)
+    body4 = createText('To clear a line, you will need to fill an entire row ', 30, white, 100, 340)
+    body5 = createText('with the tetris pieces (with no spaces in between).', 30, white, 100, 370)
 
-    body5 = createText('SCORING', 30, white, 50, 395)
-    body6 = createText('tetris peices (with no spaces in between).', 30, white, 50, 430)
-    body7 = createText('Per line cleared, you get +100 points. The more lines you ', 30, white, 50, 460)
-    body8 = createText('clear, the higher your score is!', 30, white, 50, 490)
-    body9 = createText('The higher your score, the better you are!', 30, white, 50, 520)
 
-    body10 = createText('GAMEOVER', 30, white, 50, 565)
-    body11 = createText('You must not let any Tetris piece go past the red line ', 30, white, 50, 600)
-    body12 = createText('otherwise the game will be over', 30, white, 50, 630)
-    body13 = createText('Happy Tetrising! ', 30, white, 50, 660)
+    body6 = createText('SCORING', 30, white, 100, 420)
+    body7 = createText('Per line cleared, you get +100 points. ', 30, white, 100, 460)
+    body8 = createText('The more lines you clear, the higher your score is!', 30, white, 100, 490)
+    body9 = createText('The higher your score, the better you are!', 30, white, 100, 520)
+
+    body10 = createText('GAMEOVER', 30, white, 100, 565)
+    body11 = createText('You must not let any Tetris piece go past the red line ', 30, white, 100, 600)
+    body12 = createText('Otherwise the game will be over', 30, white, 100, 630)
+    body13 = createText('Happy Tetris - ing! ', 30, white, 100, 660)
     
+    # Creates GUI for Controls
+
+    upKey = main_menu_buttons('↑', 40, darkGrey, lightGrey, lightGrey, 825, 290, blank, 55, 55)
+    upKeyText = createText('Rotate piece', 25, white, 905, 300)
+
+    downKey = main_menu_buttons('↓', 40, darkGrey, lightGrey, lightGrey, 825, 360, blank, 55, 55)
+    downKeyText = createText('Move Piece Down', 25, white, 905, 370)
+    
+    leftKey = main_menu_buttons('←', 40, darkGrey, lightGrey, lightGrey, 825, 430, blank, 55, 55)
+    leftKeyText = createText('Move Piece left', 25, white, 905, 440)
+
+    rightKey = main_menu_buttons('→', 40, darkGrey, lightGrey, lightGrey, 825, 500, blank, 55, 55)
+    rightKeyText = createText('Move Piece right', 25, white, 905, 510)
+
+    zKey = main_menu_buttons('Z', 40, darkGrey, lightGrey, lightGrey, 825, 570, blank, 55, 55)
+    zKeyText = createText('Hold Piece', 25, white, 905, 580)
+
+    spacebar = main_menu_buttons('Spacebar', 40, darkGrey, lightGrey, lightGrey, 855, 725, blank, 225, 55)
+    spacebarText = createText('Drop Piece', 25, white, 905, 675)
+
     # Clears screen and writes the text to the screen
     while True:
+        print(pygame.mouse.get_pos())
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
@@ -842,38 +979,67 @@ def helpWindow(main_window, clock):
         helpContainer.drawWindow(main_window, 5, True, True, darkOrange)
         backButton.drawButton(main_window, 8, True, True, darkOrange)
         helpTitle.drawText(main_window, True)
-        body1.drawText(main_window, True)
-        body2.drawText(main_window, True)
-        body3.drawText(main_window, True)
-        body4.drawText(main_window, True)
-        body5.drawText(main_window, True)
-        body6.drawText(main_window, True)
-        body7.drawText(main_window, True)
-        body8.drawText(main_window, True)
-        body9.drawText(main_window, True)
-        body10.drawText(main_window, True)
-        body11.drawText(main_window, True)
-        body12.drawText(main_window, True)
-        body13.drawText(main_window, True)
+        body1.drawText(main_window)
+        body2.drawText(main_window)
+        body3.drawText(main_window)
+        body4.drawText(main_window)
+        body5.drawText(main_window)
+        body6.drawText(main_window)
+        body7.drawText(main_window)
+        body8.drawText(main_window)
+        body9.drawText(main_window)
+        body10.drawText(main_window)
+        body11.drawText(main_window)
+        body12.drawText(main_window)
+        body13.drawText(main_window)
 
+
+        upKey.drawButton(main_window, 5, False, True, darkGrey)
+        upKeyText.drawText(main_window)
+        downKey.drawButton(main_window, 5, False, True, darkGrey)
+        downKeyText.drawText(main_window)
+        leftKey.drawButton(main_window, 5, False, True, darkGrey)
+        leftKeyText.drawText(main_window)
+        rightKey.drawButton(main_window, 5, False, True, darkGrey)
+        rightKeyText.drawText(main_window)
+        spacebar.drawButton(main_window, 5, False, True, darkGrey)
+        spacebarText.drawText(main_window)
+        zKey.drawButton(main_window, 5, False, True, darkGrey)
+        zKeyText.drawText(main_window)
         clock.tick(FPS)
         pygame.display.update()
 
-# closes the game
+
+def blank():
+    return
+
+
+# Opens Exit menu the game
 def exitGame(main_window, clock):
-    # exitButton = main_menu_buttons("Exit", 100,  white, red, darkerRed, 390, 550, exit, 300, 125)
+    # Creates the text and button objects
+    gameOverContainer = createWindow(30, white, grey, 575, 250, 650, 400)
+    exitGameText = createText('Exit Game?', 95, white, 50, 300)
+    playAgainButton = main_menu_buttons("Yes", 45, white, green, darkerGreen, 
+                                        325, 475, exit, 250, 100)
+    mainMenuButton = main_menu_buttons("No", 45, white, red, darkerRed, 
+                        615, 475, lambda: mainMenu(main_window, clock), 250, 100)
     while True:
+        # Draws the buttons and windows + check for button clicks
         main_window.fill(lightGrey)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
-        exit()
-        # exitButton.drawButton(main_window, 8, True, True, darkRed)
+        # print("GAMEOVER")
+        gameOverContainer.drawWindow(main_window, 5, True, True, darkGrey)
+        exitGameText.drawText(main_window, True)
+        playAgainButton.drawButton(main_window, 8, False, True, darkGreen)
+        mainMenuButton.drawButton(main_window, 8, False, True, darkRed)
         clock.tick(FPS)
         pygame.display.update()
 
 # creates main Menu with buttons
 def mainMenu(main_window, clock):
+    clock.tick(2)
     pygame.display.set_caption("Main Menu")
     tetris = createText('TETRIS', 100, darkGrey, 390, 35)
     playButton = main_menu_buttons("Play", 70, white, green, darkerGreen, 390, 225, lambda: gameLoop(main_window, clock), 325, 125)
