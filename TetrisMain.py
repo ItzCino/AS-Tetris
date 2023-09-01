@@ -3,7 +3,6 @@
 
 # import modules
 import pygame
-from Buttons import *
 from Tetris import mainMenu
 from Common import window_size
 

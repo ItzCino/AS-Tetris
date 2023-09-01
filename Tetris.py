@@ -1,15 +1,21 @@
-from Common import gameGridPosX, gameGridPosY, blockSize, rows, columns, block_colors, squareColor, tetris_data, window_height, window_width
-from pygame.draw import rect as draw_rect
-from random import randint as randomBlock
-import pygame
 from Common import *
-from Text import createText, blank
 from Buttons import main_menu_buttons
+from Text import createText, blank
+from random import randint as randomBlock
+from Grid import convertTetrisData, createGrid, drawGrid, checkGrid
 
-from pygame.sysfont import SysFont as generate_font
-from pygame.display import update as refresh_display, set_caption as display_set_caption
 from pygame.constants import QUIT
+from pygame.draw import rect as draw_rect
+from pygame.mouse import get_pos as get_mouse_pos
+from pygame.sysfont import SysFont as generate_font
+
+from pygame.display import update as update_display 
+from pygame.display import update as refresh_display, set_caption as display_set_caption
+from pygame.event import get as get_event_list
 from pygame.event import get as get_current_event_list 
+
+from pygame.constants import QUIT, K_UP as up_key, K_DOWN as down_key, K_LEFT as left_key, K_RIGHT as right_key, K_z as z_key, K_SPACE as space_key, KEYDOWN as key_pressed
+from pygame.key import get_pressed as get_key_pressed
 
 
 # Creates Tetris piece class
@@ -206,119 +212,13 @@ class TetrisPiece:
         pass
 
 
-# Convert from custom tetris file to coordinates for (ie how the blocks are placed)
-def convertTetrisData(blockData):
-    positions = []
-    for shape in blockData:
-        temp_shape = []
-        for orientation in shape:
-            temp_orientation = []
-            line_count = 0
-            for line in orientation:
-                position_count = 0
-                for block in line:
-                    if block == 'o':
-                        temp_orientation.append((position_count, line_count))
-                    position_count += 1
-                line_count += 1
-            temp_shape.append(temp_orientation)
-        positions.append(temp_shape)
-    print(positions)
-    return positions
-
-
-# Creates grid that is 10 by 20
-def createGrid(rows, columns):
-    # change this to grey later
-    finishedGrid = []
-    finishedGrid = [[squareColor for row in range(rows)] for column in range(columns)]
-    return finishedGrid
-
-
-# Creates grid that is 20 by 10
-def createCheckingGrid(rows, columns):
-    # change this to grey later
-    finishedGrid = []
-    finishedGrid = [[squareColor for columns in range(columns)] for row in range(rows)]
-
-    return finishedGrid
-
-
-# Draws a 10 x 20 grid
-def drawGrid(surface, x, y, rows, columns, blockSize, gridData, piece):
-
-    width = columns * blockSize
-    height = rows * blockSize
-    startX = x
-    startY = y
-
-    # Fills in the grid with a darker shade of grey
-    # pygame.draw.rect(surface, (150, 150, 150), (x,y,width,height))
-
-    # displays colors / pieces on the grid
-    for column in range(0, len(gridData)):
-        for row in range(0, len(gridData[0])):
-            pygame.draw.rect(surface, (gridData[column])[row], (startX + (blockSize * column), startY + (blockSize * row), blockSize, blockSize))
-    piece.drawPiece(surface)
-
-    # Draws Vertical lines
-    for column in range(columns):
-        pygame.draw.line(surface, grey, (x, y), (x, y + height), 2)
-        x += blockSize
-
-    # Draws Horizontal Lines
-    x = startX
-    for row in range(rows):
-        pygame.draw.line(surface, grey, (x, y), (x + width, y), 2)
-        if row == 3:
-            pygame.draw.line(surface, red, (x, y), (x + width, y), 3)
-        y += blockSize
-    y = startY
-
-    # Creates Border
-    pygame.draw.rect(surface, darkGrey, (x, y, width, height), 5)
-
-
-# checks grid and full rows
-def checkGrid(gridData, linesCleared):
-    running = True
-    cleared = linesCleared
-    altGridData = createCheckingGrid(rows, columns)
-    # Convert from XY to YX format
-    for row in range(rows):
-        for column in range(columns):
-            altGridData[row][column] = gridData[column][row]
-    # Checks for full rows and clears them
-    for row in range(len(altGridData)):
-        filled = True
-        for square in altGridData[row]:
-            if square == squareColor:
-                filled = False
-        if filled is True:
-            newRow = [squareColor for roww in range(rows)]
-            altGridData.pop(row)
-            altGridData.insert(0, newRow)
-            cleared += 1
-        # Ends game when a piece passes the red line
-        if row == 2:
-            for square in altGridData[row]:
-                if square != squareColor:
-                    print('GAMEOVER')
-                    running = False
-    # Convert from YX back to XY format
-    for column in range(columns):
-        for row in range(rows):
-            gridData[column][row] = altGridData[row][column]
-    return running, cleared
-
-
 # updates the stats on the GUI interface
 def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold, gameTimer):
     print(playerScore)
     # Draw the left rect for score and lines cleared
     centerY = window_height / 2 - (440) / 2
-    pygame.draw.rect(main_window, grey, (150, centerY, 225, 440))
-    pygame.draw.rect(main_window, darkGrey, (150, centerY, 225, 440), 5)
+    draw_rect(main_window, grey, (150, centerY, 225, 440))
+    draw_rect(main_window, darkGrey, (150, centerY, 225, 440), 5)
     # shows the time limit
     scoreText = createText('Timer', 30, white, 220, 290)
     scoreText.drawText(main_window, True, 150, 375)
@@ -348,8 +248,8 @@ def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold, game
 
     # Draw the left rect for queue pieces and pieces on 'hold'
     centerY = window_height / 2 - (750) / 2
-    pygame.draw.rect(main_window, grey, (825, centerY, 225, 750))
-    pygame.draw.rect(main_window, darkGrey, (825, centerY, 225, 750), 5)\
+    draw_rect(main_window, grey, (825, centerY, 225, 750))
+    draw_rect(main_window, darkGrey, (825, centerY, 225, 750), 5)\
         # Draws the next pieces
     if len(queue) < 4:
             appendPiece = TetrisPiece()
@@ -368,10 +268,11 @@ def updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold, game
     if pieceOnHold is not None:
         pieceOnHold.drawPiece(main_window, 900, 630)
 
-    pos = pygame.mouse.get_pos()
+    pos = get_mouse_pos()
     print(pos)
 
     return queue
+
 
 ##### WINDOWS AND MENUS #####
 
@@ -632,6 +533,7 @@ def exitGameMenu(main_window, clock):
 
 # main Game loop
 def gameLoop(main_window, clock):
+    # initialize game
     runningState = True
     queue = []
     piece = None
@@ -644,34 +546,42 @@ def gameLoop(main_window, clock):
     pieceOnHold = None
     varGameTimer = 0
     gameTimer = 0
+    # stores current game data from the playing grid
     global gridData
     gridData = createGrid(rows, columns)
     for pieces in range(3):
         appendPiece = TetrisPiece()
         queue.append(appendPiece)
+    # game loop
     while runningState:
+        # scoring
         playerScore = (numOfPlacedPieces * 100) + (linesCleared * 450)
+        # random selection of pieces and sets up queue of size 3
         if len(queue) < 4:
             appendPiece = TetrisPiece()
             queue.append(appendPiece)
         print(numOfPlacedPieces)
         piece = queue[0]
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        # listens for key inputs
+        for event in get_event_list ():
+            # quits game if exit is pressed
+            if event == QUIT:
                 exit()
-            if event.type == pygame.KEYDOWN:
-                keys = pygame.key.get_pressed()
-                # this key will be changed to
-                # up arrow key once prog is finished
-                if keys[pygame.K_UP]:
+            # listens for key inputs
+            if event.type == key_pressed:
+                keys = get_key_pressed()
+                # rotates pieces
+                if keys[up_key]:
                     piece.rotate()
                     piece = queue[0]
-                if keys[pygame.K_SPACE]:
+                # instantly drops pieces to the bottom
+                if keys[space_key]:
                     piece.placePiece()
                     numOfPlacedPieces += 1
                     queue.pop(0)
                     piece = queue[0]
-                if keys[pygame.K_z]:
+                # temporarily holds pieces
+                if keys[z_key]:
                     if numOfPlacedPiecesAtSwap != numOfPlacedPieces:
                         numOfPlacedPiecesAtSwap = numOfPlacedPieces
                         piece.x = (gameGridPosX - blockSize + columns // 2 * blockSize)
@@ -684,21 +594,23 @@ def gameLoop(main_window, clock):
                             pieceOnHold = tempSwapPiece
                         if pieceOnHold is None:
                             pieceOnHold = tempSwapPiece
+        # selects the next piece in queue
         piece = queue[0]
+        keys = get_key_pressed()
 
-        keys = pygame.key.get_pressed()
-
-        if keys[pygame.K_DOWN]:
+        # checks if the down arrow is pressed if so then move piece down
+        if keys[down_key]:
             if piece.pieceInDirection('down') is False:
                 pieceInDownDirection = piece.moveDown()
             if piece.pieceInDirection('down') is True:
                 piece.dropCounter = 0
                 placeCountdown = 0
 
-        if keys[pygame.K_LEFT]:
+        # checks if the left arrow is pressed if so then move piece left
+        if keys[left_key]:
             piece.moveLeft()
-
-        if keys[pygame.K_RIGHT]:
+        # checks if the right arrow is pressed if so then move piece right
+        if keys[right_key]:
             piece.moveRight()
 
         if piece.dropCounter < FPS:
@@ -709,6 +621,7 @@ def gameLoop(main_window, clock):
             if piece.pieceInDirection('down') is False:
                 placeCountdown = 0
 
+        # game tick/timer between each time the piece moves
         if varGameTimer < FPS:
             varGameTimer += 1
         else:
@@ -740,10 +653,9 @@ def gameLoop(main_window, clock):
         queue = updateStats(main_window, playerScore, linesCleared, queue, pieceOnHold, gameTimer)
 
         clock.tick(FPS)
-        pygame.display.update()
+        update_display()
         if runningState is False:
             gameOverMenu(main_window, clock, playerScore)
-
 
 # Updates the leadboards and reads and write data to the leaderboards.
 def parseLeaderboards(playerScore, gameLength):

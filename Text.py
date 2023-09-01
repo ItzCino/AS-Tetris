@@ -1,7 +1,5 @@
 from Common import window_width
-# from pygame.font import SysFont as generate_font
 import pygame.sysfont as font 
-
 
 
 # Text Class

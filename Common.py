@@ -1,5 +1,4 @@
 # Common data
-
 acceleration = 0.2
 gameLength = 0  # Sets the length of the game (in seconds). Set to value to 0 for NO time limit
 
@@ -39,9 +38,9 @@ orange = (250, 104, 0)
 darkerOrange = (199, 53, 0)
 darkOrange = (125, 50, 0)
 
-red = (229, 20, 0)
-darkerRed = (178, 0, 0)
-darkRed = (115, 10, 0)
+red = (250, 20, 0)
+darkerRed = (100, 0, 0)
+darkRed = (150, 10, 0)
 
 lightGrey = (200, 200, 200)
 grey = (100, 100, 100)

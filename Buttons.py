@@ -1,10 +1,8 @@
 from pygame.mouse import get_pressed as get_mouse_pressed, get_pos as get_mouse_pos
 from Common import window_width
-# from pygame.surface import Surface
 from pygame.font import SysFont as generate_font
 from pygame.draw import rect as draw_rect
 
-# import pygame
 
 # Creates buttons class
 class main_menu_buttons:
@@ -54,7 +52,6 @@ class main_menu_buttons:
         text_rect.topleft = self.pos
 
         # Draws background area for button
-
         if self.width is not None:
             text_rect[2] = self.width
 
